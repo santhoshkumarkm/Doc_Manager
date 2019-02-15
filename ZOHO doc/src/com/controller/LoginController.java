@@ -25,13 +25,13 @@ public class LoginController extends HttpServlet {
 			session.setAttribute("dir", name);
 			session.setAttribute("login", "true");
 			LoginDao.closeConnection();
-			site = "../user/owner.jsp";
+			site = "user/owner.jsp";
 			response.setStatus(response.SC_MOVED_TEMPORARILY);
 			response.setHeader("Location", site);
 		} else {
 			LoginDao.closeConnection();
 			session.setAttribute("login", "false");
-			site = "../index.jsp";
+			site = "index.jsp";
 		}
 		response.setStatus(response.SC_MOVED_TEMPORARILY);
 		response.setHeader("Location", site);

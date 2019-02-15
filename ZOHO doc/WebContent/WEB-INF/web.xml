@@ -10,12 +10,32 @@
 	</welcome-file-list>
 	
 	<servlet>
-		<servlet-name>login-controller</servlet-name>
+		<servlet-name>LoginController</servlet-name>
 		<servlet-class>com.controller.LoginController</servlet-class>
 	</servlet>
 
 	<servlet-mapping>
-		<servlet-name>login-controller</servlet-name>
+		<servlet-name>LoginController</servlet-name>
 		<url-pattern>/LoginController</url-pattern>
+	</servlet-mapping>
+	
+	<servlet>
+		<servlet-name>SignupController</servlet-name>
+		<servlet-class>com.controller.SignupController</servlet-class>
+	</servlet>
+
+	<servlet-mapping>
+		<servlet-name>SignupController</servlet-name>
+		<url-pattern>/SignupController</url-pattern>
+	</servlet-mapping>
+	
+	<servlet>
+		<servlet-name>NavigationController</servlet-name>
+		<servlet-class>com.controller.NavigationController</servlet-class>
+	</servlet>
+
+	<servlet-mapping>
+		<servlet-name>NavigationController</servlet-name>
+		<url-pattern>/NavigationController</url-pattern>
 	</servlet-mapping>
 </web-app>

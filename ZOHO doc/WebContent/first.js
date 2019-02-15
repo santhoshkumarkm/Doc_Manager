@@ -5,7 +5,7 @@ function navigate(element) {
 			document.getElementById("mySpace").innerHTML = this.responseText;
 		}
 	};
-	xmlhttp.open("GET", "../navigationcontroller.jsp?option=" + element.value,
+	xmlhttp.open("GET", "../NavigationController?option=" + element.value,
 			true);
 	xmlhttp.send();
 }
