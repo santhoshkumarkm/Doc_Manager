@@ -3,6 +3,7 @@ package com.controller;
 import java.io.File;
 import java.io.IOException;
 
+import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -16,7 +17,8 @@ public class SignupController extends HttpServlet {
 
 	protected void doPost(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
-		String defaultLocation = "/Users/santhosh-pt2425/Documents/Cloud_Storage_Application/Clients/";
+		ServletContext context = getServletContext();
+		String defaultLocation = context.getInitParameter("defaultLocation");
 		HttpSession session = request.getSession();
 		String name = request.getParameter("name");
 		String password = request.getParameter("password");
@@ -28,13 +30,10 @@ public class SignupController extends HttpServlet {
 			file.mkdir();
 			session.setAttribute("user", name);
 			session.setAttribute("dir", name);
-			LoginDao.closeConnection();
-			session.setAttribute("login", "true");
-			LoginDao.closeConnection();
+			session.setAttribute("loginState", "true");
 			site = "user/owner.jsp";
 		} else {
-			LoginDao.closeConnection();
-			session.setAttribute("login", "false");
+			session.setAttribute("loginState", "false");
 			site = "index.jsp";
 		}
 		response.setStatus(response.SC_MOVED_TEMPORARILY);

@@ -23,14 +23,10 @@ public class LoginController extends HttpServlet {
 		if (LoginDao.checkClient(name, String.valueOf(password.hashCode()))) {
 			session.setAttribute("user", name);
 			session.setAttribute("dir", name);
-			session.setAttribute("login", "true");
-			LoginDao.closeConnection();
+			session.setAttribute("loginState", "true");
 			site = "user/owner.jsp";
-			response.setStatus(response.SC_MOVED_TEMPORARILY);
-			response.setHeader("Location", site);
 		} else {
-			LoginDao.closeConnection();
-			session.setAttribute("login", "false");
+			session.setAttribute("loginState", "false");
 			site = "index.jsp";
 		}
 		response.setStatus(response.SC_MOVED_TEMPORARILY);

@@ -9,8 +9,8 @@ import java.sql.Statement;
 
 public class LoginDao {
 	static Connection con;
-
-	public static boolean checkClient(String name, String password) {
+	
+	static {
 		try {
 			Class.forName("com.mysql.jdbc.Driver");
 			con = DriverManager.getConnection("jdbc:mysql://localhost:3306/online_file_storage", "root", null);
@@ -18,6 +18,9 @@ public class LoginDao {
 			System.out.println("Catch occured");
 			e1.printStackTrace();
 		}
+	}
+
+	public static boolean checkClient(String name, String password) {
 		Statement stmt = null;
 		ResultSet rs = null;
 		try {
@@ -61,14 +64,6 @@ public class LoginDao {
 					stmt.close();
 			} catch (Exception e) {
 			}
-		}
-	}
-
-	public static void closeConnection() {
-		try {
-			con.close();
-		} catch (SQLException e) {
-			e.printStackTrace();
 		}
 	}
 }

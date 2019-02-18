@@ -8,34 +8,72 @@
 	<welcome-file-list>
 		<welcome-file>index.jsp</welcome-file>
 	</welcome-file-list>
-	
+
+	<context-param>
+		<param-name>defaultLocation</param-name>
+		<param-value>/Users/santhosh-pt2425/Documents/Cloud_Storage_Application/Clients/</param-value>
+	</context-param>
+
 	<servlet>
 		<servlet-name>LoginController</servlet-name>
 		<servlet-class>com.controller.LoginController</servlet-class>
 	</servlet>
-
 	<servlet-mapping>
 		<servlet-name>LoginController</servlet-name>
 		<url-pattern>/LoginController</url-pattern>
 	</servlet-mapping>
-	
+
 	<servlet>
 		<servlet-name>SignupController</servlet-name>
 		<servlet-class>com.controller.SignupController</servlet-class>
 	</servlet>
-
 	<servlet-mapping>
 		<servlet-name>SignupController</servlet-name>
 		<url-pattern>/SignupController</url-pattern>
 	</servlet-mapping>
-	
+
 	<servlet>
 		<servlet-name>NavigationController</servlet-name>
 		<servlet-class>com.controller.NavigationController</servlet-class>
 	</servlet>
-
 	<servlet-mapping>
 		<servlet-name>NavigationController</servlet-name>
 		<url-pattern>/NavigationController</url-pattern>
+	</servlet-mapping>
+	
+	<servlet>
+		<servlet-name>UploadFileController</servlet-name>
+		<servlet-class>com.controller.UploadFileController</servlet-class>
+	</servlet>
+	<servlet-mapping>
+		<servlet-name>UploadFileController</servlet-name>
+		<url-pattern>/UploadFileController</url-pattern>
+	</servlet-mapping>
+	
+	<servlet>
+		<servlet-name>NewFolderController</servlet-name>
+		<servlet-class>com.controller.NewFolderController</servlet-class>
+	</servlet>
+	<servlet-mapping>
+		<servlet-name>NewFolderController</servlet-name>
+		<url-pattern>/NewFolderController</url-pattern>
+	</servlet-mapping>
+	
+	<servlet>
+		<servlet-name>DeleteFileController</servlet-name>
+		<servlet-class>com.controller.DeleteFileController</servlet-class>
+	</servlet>
+	<servlet-mapping>
+		<servlet-name>DeleteFileController</servlet-name>
+		<url-pattern>/DeleteFileController</url-pattern>
+	</servlet-mapping>
+	
+	<servlet>
+		<servlet-name>OpenFolderController</servlet-name>
+		<servlet-class>com.controller.OpenFolderController</servlet-class>
+	</servlet>
+	<servlet-mapping>
+		<servlet-name>OpenFolderController</servlet-name>
+		<url-pattern>/OpenFolderController</url-pattern>
 	</servlet-mapping>
 </web-app>

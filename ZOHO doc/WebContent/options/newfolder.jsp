@@ -4,13 +4,12 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Upload file</title>
+<title>New folder</title>
 <script type="text/javascript" src="../first.js"></script>
 </head>
 <body>
-	<form action="../UploadFileController" method="get" id="myform">
-		File url:	<input type="text" name="fileurl" /><br /> 
-		File Name:	<input type="text" name="filename" /><br /> 
+	<form action="../NewFolderController" method="get" id="myform">
+		Folder Name:	<input type="text" name="foldername" /><br /> 
 		<input type=submit value="Submit"/>
 	</form>
 </body>

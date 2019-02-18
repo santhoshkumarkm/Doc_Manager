@@ -9,11 +9,12 @@
 </head>
 <body>
 	<%
-		if (session.getAttribute("login") != null && session.getAttribute("login").equals("false")) {
+		if (session.getAttribute("loginState") != null && session.getAttribute("loginState").equals("false")) {
 	%>
 	<h4>Error occured !</h4>
 
 	<%
+		session.setAttribute("loginState", null);
 		}
 	%>
 	<h1 align="center">Welcome !!!</h1>

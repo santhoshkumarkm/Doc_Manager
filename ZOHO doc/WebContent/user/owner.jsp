@@ -15,23 +15,46 @@
 	<%
 		String dir = (String) session.getAttribute("dir");
 		out.print("<h2>" + "Welcome " + session.getAttribute("user") + "</h2>");
-		out.print("-----------------------------------------------------------" + "<br>");
+		out.print("-----------------------------------------------------------" + "<br/>");
 		out.print("Current directory: " + "/" + dir + "<br>");
-		out.print("-----------------------------------------------------------" + "<br>");
+	%>		
+		<br/><input type="button" onclick="navigate(this)" value="Open folder" />
+		<input type="button" onclick="navigate(this)" value="Go back" /><br/>
+	<%
+		out.print("-----------------------------------------------------------" + "<br/>");
 	%>
 	<div align="center" style="line-height: 40px;">
 		<input type="button" id="menu" onclick="navigate(this)" value="Upload file" />
-		<input type="button" id="menu" onclick="location.href='';" value="New file" />
-		<input type="button" id="menu" onclick="location.href='';" value="New subfolder" />
-		<input type="button" id="menu" onclick="location.href='';" value="Delete file/folder" />
-		<input type="button" id="menu" onclick="location.href='';" value="Open file" /> 
-		<input type="button" id="menu" onclick="location.href='';" value="Open folder" /> 
-		<input type="button" id="menu" onclick="location.href='';" value="Share my file/folder" /> 
-		<input type="button" id="menu" onclick="location.href='';" value="Access other user's shared files" />
-		<input type="button" id="menu" onclick="location.href='';" value="View my shared files and folders" />
-		<input type="button" id="menu" onclick="location.href='';" value="Remove share access" />
-		<input type="button" id="menu" onclick="location.href='';" value="Find" /> <br>
+		<input type="button" id="menu" onclick="navigate(this)" value="New file" />
+		<input type="button" id="menu" onclick="navigate(this)" value="New folder" />
+		<input type="button" id="menu" onclick="navigate(this)" value="Delete file/folder" />
+		<input type="button" id="menu" onclick="navigate(this)" value="Open file" /> 
+		<input type="button" id="menu" onclick="navigate(this)" value="Share my file/folder" /> 
+		<input type="button" id="menu" onclick="navigate(this)" value="Access other user's shared files" />
+		<input type="button" id="menu" onclick="navigate(this)" value="View my shared files and folders" />
+		<input type="button" id="menu" onclick="navigate(this)" value="Remove share access" />
+		<input type="button" id="menu" onclick="navigate(this)" value="Find" /> <br>
 		<p id="mySpace"></p>
 	</div>
+	<%
+		if(session.getAttribute("successState") != null && session.getAttribute("successState").equals("false")){
+			session.setAttribute("successState", "null");
+	%>
+		<!-- out.print("<h3>" + "Error occured" + "</h3>"); -->
+		<script type="text/javascript">
+		alertTemp("Error Occured");
+		</script>
+	<% 
+		} else if (session.getAttribute("successState") != null && session.getAttribute("successState").equals("true")){
+			session.setAttribute("successState", "null");
+	%>
+		<!-- out.print("<h3>" + "Success" + "</h3>"); -->
+		<script type="text/javascript">
+		alertTemp("Success");
+		</script>
+	<%
+		}
+	%>
+	<div></div>
 </body>
 </html>
