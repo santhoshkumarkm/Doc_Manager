@@ -30,9 +30,9 @@ public class NewFolderController extends HttpServlet {
 		if (!file.exists()) {
 			file.mkdir();
 			ClientsInfoDao.insertFile(location);
-			session.setAttribute("successState", "true");
+			session.setAttribute("successState", "success");
 		} else {
-			session.setAttribute("successState", "false");
+			session.setAttribute("successState", "error");
 		}
 		String site = "user/owner.jsp";
 		response.setStatus(response.SC_MOVED_TEMPORARILY);

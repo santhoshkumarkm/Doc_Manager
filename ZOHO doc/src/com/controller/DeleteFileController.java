@@ -13,7 +13,7 @@ import javax.servlet.http.HttpSession;
 import com.dao.ClientsInfoDao;
 
 public class DeleteFileController extends HttpServlet {
-	private static final long serialVersionUID = 5L;
+	private static final long serialVersionUID = 7L;
 	String defaultLocation;
 
 	public void init(ServletConfig config) throws ServletException {
@@ -30,9 +30,9 @@ public class DeleteFileController extends HttpServlet {
 		if (file.exists()) {
 			file.delete();
 			ClientsInfoDao.deleteFile(location);
-			session.setAttribute("successState", "true");
+			session.setAttribute("successState", "success");
 		} else {
-			session.setAttribute("successState", "false");
+			session.setAttribute("successState", "error");
 		}
 		String site = "user/owner.jsp";
 		response.setStatus(response.SC_MOVED_TEMPORARILY);

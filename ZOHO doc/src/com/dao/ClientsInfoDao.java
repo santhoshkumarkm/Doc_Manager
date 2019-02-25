@@ -6,10 +6,13 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.Map;
 
 public class ClientsInfoDao {
 	static Connection con;
-	
+
 	static {
 		try {
 			Class.forName("com.mysql.jdbc.Driver");
@@ -19,7 +22,7 @@ public class ClientsInfoDao {
 			e1.printStackTrace();
 		}
 	}
-	
+
 	static public long insertFile(String location) {
 		PreparedStatement stmt = null;
 		Statement stmt2 = null;
@@ -68,7 +71,7 @@ public class ClientsInfoDao {
 		}
 		return primaryKeyValue;
 	}
-	
+
 	public static long deleteFile(String location) {
 		Statement stmt = null;
 		long primaryKeyValue = 0;
@@ -85,5 +88,96 @@ public class ClientsInfoDao {
 			}
 		}
 		return primaryKeyValue;
+	}
+
+	public static LinkedHashSet<String> getSharedUserNamesForAnUser(String userName) {
+		Statement stmt = null;
+		ResultSet rs = null;
+		LinkedHashSet<String> set = new LinkedHashSet<String>();
+		try {
+			stmt = con.createStatement();
+			rs = stmt.executeQuery(
+					"select f.filelocation from files_info f inner join shared_users_info u on f.id = u.file_id inner join clients_info c on u.user_id = c.id where c.name ='"
+							+ userName + "'");
+			while (rs.next()) {
+				String fileLocation = rs.getString(1);
+				set.add(fileLocation.substring(0, fileLocation.indexOf('/')));
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		} finally {
+			try {
+				if (stmt != null)
+					stmt.close();
+			} catch (Exception e) {
+			}
+			try {
+				if (rs != null)
+					rs.close();
+			} catch (Exception e) {
+			}
+		}
+		return set;
+	}
+
+	public static LinkedHashMap<String, String> getSharedFilesForAnUser(String sharedUser, String user) {
+		Statement stmt = null;
+		ResultSet rs = null;
+		LinkedHashMap<String, String> map = new LinkedHashMap<String, String>();
+		try {
+			stmt = con.createStatement();
+			rs = stmt.executeQuery(
+					"select f.filelocation, u.privilege from files_info f inner join shared_users_info u on f.id = u.file_id inner join clients_info c on u.user_id = c.id where c.name ='"
+							+ user + "' and f.filelocation like '" + sharedUser + "%'");
+			while (rs.next()) {
+				map.put(rs.getString(1), rs.getString(2));
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		} finally {
+			try {
+				if (stmt != null)
+					stmt.close();
+			} catch (Exception e) {
+			}
+			try {
+				if (rs != null)
+					rs.close();
+			} catch (Exception e) {
+			}
+		}
+		return map;
+	}
+
+	public static LinkedHashMap<String, String> getSharedFilesForALocation(String location, String privilege) {
+		Statement stmt = null;
+		ResultSet rs = null;
+		LinkedHashMap<String, String> map = new LinkedHashMap<String, String>();
+		try {
+			stmt = con.createStatement();
+			rs = stmt.executeQuery("select filelocation from files_info where filelocation like '" + location + "/%'");
+			while (rs.next()) {
+				String result = rs.getString(1);
+				if (result.substring(location.length(), result.length()).indexOf('/') == result
+						.substring(location.length(), result.length()).lastIndexOf('/')) {
+					map.put(result, privilege);
+				}
+			}
+			System.out.println(map);
+		} catch (SQLException e) {
+			e.printStackTrace();
+		} finally {
+			try {
+				if (stmt != null)
+					stmt.close();
+			} catch (Exception e) {
+			}
+			try {
+				if (rs != null)
+					rs.close();
+			} catch (Exception e) {
+			}
+		}
+		return map;
 	}
 }

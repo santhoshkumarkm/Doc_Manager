@@ -22,18 +22,21 @@ public class SignupController extends HttpServlet {
 		HttpSession session = request.getSession();
 		String name = request.getParameter("name");
 		String password = request.getParameter("password");
+		String confirmPassword = request.getParameter("confirmpassword");
 		String site;
 
-		if (!LoginDao.checkClient(name, String.valueOf(password.hashCode()))) {
+		if (name.length() > 0 && password.length() > 0 && confirmPassword.length() > 0
+				&& password.equals(confirmPassword)
+				&& !LoginDao.checkClient(name, String.valueOf(password.hashCode()))) {
 			LoginDao.addClient(name, String.valueOf(password.hashCode()));
 			File file = new File(defaultLocation + name);
 			file.mkdir();
 			session.setAttribute("user", name);
 			session.setAttribute("dir", name);
-			session.setAttribute("loginState", "true");
+			session.setAttribute("loginState", "success");
 			site = "user/owner.jsp";
 		} else {
-			session.setAttribute("loginState", "false");
+			session.setAttribute("loginState", "error");
 			site = "index.jsp";
 		}
 		response.setStatus(response.SC_MOVED_TEMPORARILY);

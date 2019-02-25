@@ -5,25 +5,32 @@
 <head>
 <meta charset="UTF-8">
 <title>Welcome</title>
-<link rel="stylesheet" href="WebContent/resources/css/first.css" />
+<script type="text/javascript" src="first.js"></script>
+<link href="first.css" rel="stylesheet" type="text/css">
 </head>
 <body>
-	<%
-		if (session.getAttribute("loginState") != null && session.getAttribute("loginState").equals("false")) {
+<%-- 	<%
+		if (session.getAttribute("loginState") != null && session.getAttribute("loginState").equals("error")) {
 	%>
-	<h4>Error occured !</h4>
-
+	<script type="text/javascript">
+		alertTemp("Error Occured");
+	</script>
 	<%
-		session.setAttribute("loginState", null);
+		} else if (session.getAttribute("loginState") != null
+				&& session.getAttribute("loginState").equals("success")) {
+	%>
+	<script type="text/javascript">
+		alertTemp("Success");
+	</script>
+	<%
 		}
-	%>
+		session.setAttribute("loginState", "start");
+	%> --%>
 	<h1 align="center">Welcome !!!</h1>
 	<div align="center">
-		<input type="button"
-			style="-webkit-appearance: none; background-color: black; font-size: 20px; color: white; height: 50px; width: 200px"
-			onclick="location.href='login/login.jsp';" value="Login" /> <br>
-		<br> <input type="button"
-			style="-webkit-appearance: none; background-color: black; font-size: 20px; color: white; height: 50px; width: 200px"
+		<input type="button" id="bigblackbutton"
+			onclick="location.href='login/login.jsp';" value="Login" /> <br />
+		<br /> <input type="button" id="bigblackbutton"
 			onclick="location.href='login/signup.jsp';" value="SignUp" />
 	</div>
 </body>

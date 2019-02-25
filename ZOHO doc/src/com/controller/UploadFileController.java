@@ -45,9 +45,9 @@ public class UploadFileController extends HttpServlet {
 			fw.write(content);
 			fw.close();
 			ClientsInfoDao.insertFile(location);
-			session.setAttribute("successState", "true");
+			session.setAttribute("successState", "success");
 		} else {
-			session.setAttribute("successState", "false");
+			session.setAttribute("successState", "error");
 		}
 		String site = "user/owner.jsp";
 		response.setStatus(response.SC_MOVED_TEMPORARILY);

@@ -5,56 +5,47 @@
 <head>
 <meta charset="UTF-8">
 <title>Owner</title>
-<script type="text/javascript" src="../first.js"></script>
-<link href="../first.css" rel="stylesheet" type="text/css">
+<script type="text/javascript" src="../script.js"></script>
+<link href="../style.css" rel="stylesheet" type="text/css">
 </head>
-<body>
+<body style="background-color: #D7DBDD;">
 	<%@page import="java.util.ArrayList"%>
 	<%@page import="java.util.List"%>
 	<%@page import="com.utilities.ClientUtilities"%>
 	<%
-		String dir = (String) session.getAttribute("dir");
-		out.print("<h2>" + "Welcome " + session.getAttribute("user") + "</h2>");
-		out.print("-----------------------------------------------------------" + "<br/>");
-		out.print("Current directory: " + "/" + dir + "<br>");
-	%>		
-		<br/><input type="button" onclick="navigate(this)" value="Open folder" />
-		<input type="button" onclick="navigate(this)" value="Go back" /><br/>
-	<%
-		out.print("-----------------------------------------------------------" + "<br/>");
+		String user = (String) session.getAttribute("user");
 	%>
-	<div align="center" style="line-height: 40px;">
-		<input type="button" id="menu" onclick="navigate(this)" value="Upload file" />
-		<input type="button" id="menu" onclick="navigate(this)" value="New file" />
-		<input type="button" id="menu" onclick="navigate(this)" value="New folder" />
-		<input type="button" id="menu" onclick="navigate(this)" value="Delete file/folder" />
-		<input type="button" id="menu" onclick="navigate(this)" value="Open file" /> 
-		<input type="button" id="menu" onclick="navigate(this)" value="Share my file/folder" /> 
-		<input type="button" id="menu" onclick="navigate(this)" value="Access other user's shared files" />
-		<input type="button" id="menu" onclick="navigate(this)" value="View my shared files and folders" />
-		<input type="button" id="menu" onclick="navigate(this)" value="Remove share access" />
-		<input type="button" id="menu" onclick="navigate(this)" value="Find" /> <br>
-		<p id="mySpace"></p>
+	<div class="topbar" id="topbar">
+		<%-- <div class="username" id="username"
+			style="float: right; padding: 10px 10px;">
+			<h4 style="display: inline;">
+				Logout(<%=user%>)
+			</h4>
+		</div> --%>
+		<div class="container" id="root" onclick="viewFiles('<%=user%>','owner')">
+			<div class="icon">
+				<img src='../images/folder.png' class="icon" alt="Folder Image">
+			</div>
+			<div class="text">root</div>
+		</div>
 	</div>
-	<%
-		if(session.getAttribute("successState") != null && session.getAttribute("successState").equals("false")){
-			session.setAttribute("successState", "null");
-	%>
-		<!-- out.print("<h3>" + "Error occured" + "</h3>"); -->
-		<script type="text/javascript">
-		alertTemp("Error Occured");
-		</script>
-	<% 
-		} else if (session.getAttribute("successState") != null && session.getAttribute("successState").equals("true")){
-			session.setAttribute("successState", "null");
-	%>
-		<!-- out.print("<h3>" + "Success" + "</h3>"); -->
-		<script type="text/javascript">
-		alertTemp("Success");
-		</script>
-	<%
-		}
-	%>
-	<div></div>
+
+	<script type="text/javascript">
+		getSharedUsers();
+	</script>
+
+	<div class="main">
+		<div
+			style="width: auto; background-color: black; height: 100%; padding: 10px 30px 10px 30px;">
+			<div id="header" align="center" style="float: left;">My Files</div>
+			<div style="float: right;">
+				<input type="button" onclick="goBack('<%=user%>')" value="Back">
+			</div>
+			<div style='clear: both'></div>
+			<div id="viewbox">
+				<ul style="list-style-type: none;" id="myfolderlist"></ul>
+			</div>
+		</div>
+	</div>
 </body>
 </html>

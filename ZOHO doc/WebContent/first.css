@@ -1,5 +1,88 @@
 @charset "UTF-8";
 
-#menu{
-	-webkit-appearance: none; background-color: grey; font-size: 16px; color: white; display: inline-block; height: 30px
+#menu {
+	-webkit-appearance: none;
+	background-color: grey;
+	font-size: 16px;
+	color: white;
+	display: inline-block;
+	height: 30px
+}
+
+#bigblackbutton {
+	-webkit-appearance: none;
+	background-color: black;
+	font-size: 20px;
+	color: white;
+	height: 40px;
+	width: 200px
+}
+/* 
+#leftbox {
+	padding: 10px 10px 10px 10px;
+	overflow: auto;
+	width: 40%;
+	height: 210px;
+	float: left;
+	background-color: white;
+}
+
+#rightbox {
+	opacity: 0.5;
+	padding: 10px 10px 10px 10px;
+	width: 40%;
+	height: 210px;
+	float: right;
+	overflow: auto;
+	background-color: white;
+}
+
+#leftheader {
+	background-color: black;
+	padding: 0px 10px 0px 10px;
+	width: 40%;
+	float: left;
+	font-family: sans-serif;
+	color: white;
+}
+
+#rightheader {
+	opacity: 0.5;
+	background-color: black;
+	padding: 0px 10px 0px 10px;
+	width: 40%;
+	float: right;
+	font-family: sans-serif;
+	color: white; */
+	
+.sidebar {
+	margin: 0;
+	padding: 0;
+	width: 200px;
+	background-color: #f1f1f1;
+	position: fixed;
+	overflow: auto;
+}
+
+.sidebar a {
+	display: block;
+	color: black;
+	padding: 16px;
+	text-decoration: none;
+}
+
+.sidebar a.active {
+	background-color: #4CAF50;
+	color: white;
+}
+
+.sidebar a:hover {
+	background-color: black;
+	color: white;
+}
+
+div.content {
+  margin-left: 200px;
+  padding: 1px 16px;
+}
 }

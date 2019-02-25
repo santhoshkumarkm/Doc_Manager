@@ -27,6 +27,9 @@ public class NavigationController extends HttpServlet {
 		} else if (option.equals("Open folder")) {
 			RequestDispatcher rd = request.getRequestDispatcher("options/openfolder.jsp");
 			rd.include(request, response);
+		} else if (option.equals("Share my file/folder")) {
+			RequestDispatcher rd = request.getRequestDispatcher("options/sharefile.jsp");
+			rd.include(request, response);
 		}
 	}
 }

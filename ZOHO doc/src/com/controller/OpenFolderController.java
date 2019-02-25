@@ -28,7 +28,7 @@ public class OpenFolderController extends HttpServlet {
 		if (file.exists()) {
 			session.setAttribute("dir", location);
 		} else {
-			session.setAttribute("successState", "false");
+			session.setAttribute("successState", "error");
 		}
 		String site = "user/owner.jsp";
 		response.setStatus(response.SC_MOVED_TEMPORARILY);

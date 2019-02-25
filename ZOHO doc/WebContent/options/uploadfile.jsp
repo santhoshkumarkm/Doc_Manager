@@ -5,7 +5,6 @@
 <head>
 <meta charset="UTF-8">
 <title>Upload file</title>
-<script type="text/javascript" src="../first.js"></script>
 </head>
 <body>
 	<form action="../UploadFileController" method="get" id="myform">
