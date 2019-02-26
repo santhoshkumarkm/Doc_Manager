@@ -2,13 +2,15 @@ package com.controller;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.PrintWriter;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
+
+import org.json.simple.JSONObject;
 
 import com.dao.ClientsInfoDao;
 
@@ -23,20 +25,20 @@ public class DeleteFileController extends HttpServlet {
 
 	protected void doGet(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
-		HttpSession session = request.getSession();
-		String fileName = request.getParameter("filename");
-		String location = session.getAttribute("dir") + "/" + fileName;
+		String location = request.getParameter("location");
 		File file = new File(defaultLocation + "/" + location);
+		JSONObject jsonObject = new JSONObject();
+		String successState = "false";
 		if (file.exists()) {
 			file.delete();
 			ClientsInfoDao.deleteFile(location);
-			session.setAttribute("successState", "success");
-		} else {
-			session.setAttribute("successState", "error");
+			successState = "true";
 		}
-		String site = "user/owner.jsp";
-		response.setStatus(response.SC_MOVED_TEMPORARILY);
-		response.setHeader("Location", site);
+		jsonObject.put("success", successState);
+		response.setContentType("application/json");
+		PrintWriter out = response.getWriter();
+		out.print(jsonObject);
+		out.flush();
 	}
 
 }

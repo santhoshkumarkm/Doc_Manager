@@ -1,10 +1,8 @@
 package com.controller;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.URLDecoder;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -15,7 +13,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
-import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
 import com.dao.ClientsInfoDao;
@@ -41,8 +38,6 @@ public class ViewFolderController extends HttpServlet {
 			crunchifyMap = ClientsInfoDao.getSharedFilesForAnUser(sharedUser, userName);
 		}
 		JSONObject jsonObject = new JSONObject(crunchifyMap);
-		session.setAttribute("successState", "success");
-		session.setAttribute("dir", sharedUser);
 		response.setContentType("application/json");
 		PrintWriter out = response.getWriter();
 		out.print(jsonObject);

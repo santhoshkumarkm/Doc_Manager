@@ -163,7 +163,6 @@ public class ClientsInfoDao {
 					map.put(result, privilege);
 				}
 			}
-			System.out.println(map);
 		} catch (SQLException e) {
 			e.printStackTrace();
 		} finally {
@@ -179,5 +178,15 @@ public class ClientsInfoDao {
 			}
 		}
 		return map;
+	}
+
+	public static String checkAccess(String location, String rootUser, String sharedUser) {
+		LinkedHashMap<String, String> fileListMap = getSharedFilesForAnUser(sharedUser, rootUser);
+		for(Map.Entry<String, String> entry : fileListMap.entrySet()) {
+			if(location.contains(entry.getKey())) {
+				return entry.getValue();
+			}
+		}
+		return "denied";
 	}
 }

@@ -8,25 +8,40 @@
 	left: 0;
 	width: 100%;
 	height: 125px;
+	z-index: 2;
 }
 
-.container {
-	padding: 8px 10px 10px 10px;
-	float: left;
-	display: inline-block;
-	opacity: 0.6;
+#topbarmenu {
+	background-color: #800000;
+	position: fixed;
+	top: 125px;
+	left: 0;
+	width: 100%;
+	z-index: 2;
 }
 
 .main {
 	clear: both;
-	padding: 130px 0px 0px 10px;
+	padding: 160px 0px 0px 0px;
 	height: 1500px;
 }
 
-.container:hover {
+.container {
+	cursor: pointer;
+	padding: 8px 10px 10px 10px;
+	float: left;
+	display: inline-block;
 	opacity: 1;
 }
 
+.container:focus {
+	opacity: 1;
+}
+/* 
+.container:hover {
+	opacity: 1;
+}
+ */
 .text {
 	display: block;
 	font-size: 17px;
@@ -52,12 +67,63 @@
 	background-color: white;
 }
 
-.file {
-	width: 25px;
-	height: 25px;
+.list {
+	float: left;
+	width: 205px;
+	clear: left;
 }
 
-.folder {
-	width: 25px;
-	height: 25px;
+.openfolderbutton {
+	cursor: pointer;
+	background-color: gray;
+	color: white;
+	padding: 5px 15px;
+	text-align: center;
+	text-decoration: none;
+	display: block;
+	font-size: 16px;
+	width: 205px;
+}
+
+.openfolderbutton:hover {
+	background-color: #E74C3C;
+	outline: none;
+}
+
+.openfolderbutton:focus {
+	background-color: #E74C3C;
+	outline: none;
+}
+
+.form-popup {
+	display: none;
+	position: absolute;
+	top: 40%;
+	z-index: 1;
+	border: 3px solid black;
+	left: 40%;
+}
+
+.form-container {
+	max-width: 300px;
+	padding: 3px;
+	background-color: white;
+}
+
+.form-container .rightclickmenubtn {
+	background-color: #D7DBDD;
+	padding: 8px 10px;
+	border: none;
+	cursor: pointer;
+	width: 100%;
+}
+
+.form-container .rightclickmenubtn:hover {
+	background-color: black;
+	color: white;
+}
+
+.form-container .cancel {
+	color: white;
+	background-color: #E74C3C;
 }

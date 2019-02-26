@@ -1,4 +1,6 @@
-var prevDir;
+var currentDir=null;
+var currentPrivilege=null;
+var selectedButton=null;
 
 var folderImg = document.createElement('img');
 folderImg.setAttribute('src', '../images/folder.png');
@@ -38,6 +40,9 @@ function userListTraverse(value) {
 	user.setAttribute('class', 'container');
 	user.setAttribute('id', value);
 	user.setAttribute('onclick', 'viewFiles(id)');
+	user.addEventListener('click', function(element) {
+		viewFiles(id);
+	});
 	user.appendChild(folderImgDiv);
 	user.appendChild(textDiv);
 	document.getElementById("topbar").appendChild(user);
@@ -46,8 +51,10 @@ function userListTraverse(value) {
 function viewFiles(user, privilege="default") {
 	var xmlhttp = new XMLHttpRequest();
 	xmlhttp.onreadystatechange = function() {
+	currentDir = user;
+	currentPrivilege = privilege;
 		if (this.readyState == 4 && this.status == 200) {
-			prevDir = user;
+			document.getElementById("dispdir").innerHTML = user;
 			var myfolderlist = document.getElementById("myfolderlist");
 			while (myfolderlist.firstChild) {
 				myfolderlist.removeChild(myfolderlist.firstChild);
@@ -68,20 +75,29 @@ function viewFiles(user, privilege="default") {
 
 function openFolder(file, privilege) {
 	var item = document.createElement('li');
+	item.setAttribute('class', 'list');
 	var button = document.createElement('button');
+	button.addEventListener('contextmenu', function(element) {
+		element.preventDefault();
+	    buttonRightClick(event, this.id);
+	});
+	button.setAttribute('class', 'openfolderbutton');
+	button.setAttribute('id', file);
 	if (file.slice(-4) == ".txt") {
 		var fileImg = document.createElement('img');
 		fileImg.setAttribute('src', '../images/file.png');
 		fileImg.setAttribute('alt', 'File Image');
-		fileImg.setAttribute('class', 'file');
+		fileImg.setAttribute('width', '25px');
+		fileImg.setAttribute('height', '25px');
 		button.appendChild(fileImg);
 	} else {
 		var folderImg = document.createElement('img');
 		folderImg.setAttribute('src', '../images/folder.png');
 		folderImg.setAttribute('alt', 'Folder Image');
-		folderImg.setAttribute('class', 'folder');
+		folderImg.setAttribute('width', '25px');
+		folderImg.setAttribute('height', '25px');
 		button.appendChild(folderImg);
-		item.setAttribute('ondblclick', "viewFiles('"+file+"','"+privilege+"')");
+		button.setAttribute('ondblclick', "viewFiles('"+file+"','"+privilege+"')");
 	}
 	if (privilege != "owner") {
 		button.appendChild(document.createTextNode(" " + file + " (" + privilege
@@ -93,22 +109,124 @@ function openFolder(file, privilege) {
 	document.getElementById("myfolderlist").appendChild(item);
 }
 
-function goBack(rootUser){
-	if(!prevDir.startsWith(rootUser)){
-		validateURL(prevDir.substring(0,prevDir.lastIndexOf('/')), rootUser);
-	}
-	else if(prevDir.length > rootUser.length){
-		viewFiles(prevDir.substring(0,prevDir.lastIndexOf('/')),'owner');		
-	}
-}
-
-function validateURL(url, rootUser){
+function goBack(){
 	var xmlhttp = new XMLHttpRequest();
 	xmlhttp.onreadystatechange = function() {
 		if (this.readyState == 4 && this.status == 200) {
-			var parsedJsonObj = JSON.parse(this.responseText);
+			var accessCheck = JSON.parse(this.responseText);
+			if(accessCheck.access != "denied"){		
+				viewFiles(accessCheck.prevLocation, accessCheck.access);
+			}
 		}
 	};
-	xmlhttp.open("GET", "../ValidateUrlController?rootuser=" + rootUser, true);
+	xmlhttp.open("GET", "../GoBackController?location=" + currentDir, true);
+	xmlhttp.send();
+}
+
+function setBoxRightClick(){
+	document.getElementById("viewbox").addEventListener('contextmenu', function(element) {
+		element.preventDefault();
+	    windowRightClick(event);
+	});
+}
+
+function buttonRightClick(event, id){
+	if (currentPrivilege=="owner"){
+		document.getElementById("selected").innerHTML = id;
+		selectedButton = id;
+		document.getElementById("buttonForm").style.display = "block";
+		document.getElementById("buttonForm").style.left = event.clientX  + "px";
+		document.getElementById("buttonForm").style.top = event.clientY  + "px";
+	}
+}
+
+function windowRightClick(event){
+	if(event.target.nodeName=="DIV" && (currentPrivilege=="owner" || currentPrivilege=="write")){
+		document.getElementById("containerForm").style.display = "block";
+		document.getElementById("containerForm").style.left = event.clientX  + "px";
+		document.getElementById("containerForm").style.top = event.clientY  + "px";
+	}
+}
+
+function closeButtonForm(){
+	document.getElementById("buttonForm").style.display = "none";
+}
+
+function closeBoxForm(){
+	document.getElementById("containerForm").style.display = "none";
+}
+
+function closeNewFolderForm(){
+	document.getElementById("newfolderForm").style.display = "none";
+}
+
+function newFolder(){
+	closeBoxForm();
+	document.getElementById("newfolderForm").style.display = "block";
+}
+
+function deleteFile(){
+	var xmlhttp = new XMLHttpRequest();
+	xmlhttp.onreadystatechange = function() {
+		if (this.readyState == 4 && this.status == 200) {
+			var successCheck = JSON.parse(this.responseText);
+			if(successCheck.success == "true"){
+				closeButtonForm();
+				viewFiles(currentDir, currentPrivilege);
+			} else {
+				alert(successCheck.success);
+			}
+		}
+	};
+	xmlhttp.open("GET", "../DeleteFileController?location=" + selectedButton, true);
+	xmlhttp.send();
+}
+
+function shareFile(){
+	var xmlhttp = new XMLHttpRequest();
+	xmlhttp.onreadystatechange = function() {
+		if (this.readyState == 4 && this.status == 200) {
+			var successCheck = JSON.parse(this.responseText);
+			if(successCheck.success == "true"){
+				closeButtonForm();
+				viewFiles(currentDir, currentPrivilege);
+			} else {
+				alert(successCheck.success);
+			}
+		}
+	};
+	xmlhttp.open("GET", "../ShareFileController?location=" + selectedButton, true);
+	xmlhttp.send();
+}
+
+function newFolderHandler(){
+	var folderName = document.getElementById("foldername").value;
+	var xmlhttp = new XMLHttpRequest();
+	xmlhttp.onreadystatechange = function() {
+		if (this.readyState == 4 && this.status == 200) {
+			var successCheck = JSON.parse(this.responseText);
+			if(successCheck.success == "true"){
+				closeNewFolderForm();
+				viewFiles(currentDir, currentPrivilege);
+			} else {
+				alert(successCheck.success);
+			}
+		}
+	};
+	xmlhttp.open("GET", "../NewFolderController?location=" + currentDir +"&foldername=" + folderName, true);
+	xmlhttp.send();
+}
+
+function logout(){
+	var folderName = document.getElementById("foldername").value;
+	var xmlhttp = new XMLHttpRequest();
+	xmlhttp.onreadystatechange = function() {
+		if (this.readyState == 4 && this.status == 200) {
+			var successCheck = JSON.parse(this.responseText);
+			alert("Logout successful");
+			window.location.replace("../index.jsp")
+		}
+	};
+	xmlhttp.open("GET", "../LogoutController", true);
 	xmlhttp.send();
 }
