@@ -2,23 +2,23 @@ package com.controller;
 
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.net.URLDecoder;
-import java.util.LinkedHashMap;
-import java.util.Map;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
+import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
+import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
 import com.dao.ClientsInfoDao;
 
-public class ViewFolderForLocationController extends HttpServlet {
-	private static final long serialVersionUID = 10880L;
+@WebServlet("/AllUserListController")
+public class AllUserListController extends HttpServlet {
+	private static final long serialVersionUID = 501L;
 	String defaultLocation;
 
 	public void init(ServletConfig config) throws ServletException {
@@ -28,21 +28,18 @@ public class ViewFolderForLocationController extends HttpServlet {
 
 	protected void doGet(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
-		String location = URLDecoder.decode(request.getParameter("location"), "UTF-8");
-		Map<String, String> crunchifyMap = new LinkedHashMap<String, String>();
 		HttpSession session = request.getSession();
-		String userName = (String) session.getAttribute("user");
-		if (location.startsWith(userName)) {
-			crunchifyMap = ClientsInfoDao.getRootUserFiles(location);
-		} else {
-			crunchifyMap = ClientsInfoDao.getSharedFilesForALocation(location, userName);
-		}
-		JSONObject jsonObject = new JSONObject(crunchifyMap);
+		JSONObject jsonObject = new JSONObject();
+		String successState = "false";
+		String user = (String) session.getAttribute("user");
+		String location = request.getParameter("location");
+		JSONArray userListArray = ClientsInfoDao.allUserList(user, location);
+		successState = "true";
+		jsonObject.put("success", successState);
+		jsonObject.put("users", userListArray);
 		response.setContentType("application/json");
 		PrintWriter out = response.getWriter();
 		out.print(jsonObject);
 		out.flush();
-
 	}
-
 }

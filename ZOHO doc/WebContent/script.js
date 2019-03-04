@@ -1,6 +1,7 @@
-var currentDir=null;
-var currentPrivilege=null;
-var selectedButton=null;
+var owner = null;
+var currentDir = null;
+var currentPrivilege = null;
+var selectedButton = null;
 
 var folderImg = document.createElement('img');
 folderImg.setAttribute('src', '../images/folder.png');
@@ -22,9 +23,6 @@ function getSharedUsers() {
 		if (this.readyState == 4 && this.status == 200) {
 			var userListObj = JSON.parse(this.responseText);
 			var userList = userListObj.userList;
-			if (userList.length == 0) {
-				alert("no shared files");
-			}
 			userList.forEach(userListTraverse);
 		}
 	};
@@ -39,9 +37,8 @@ function userListTraverse(value) {
 	var user = document.createElement('div');
 	user.setAttribute('class', 'container');
 	user.setAttribute('id', value);
-	user.setAttribute('onclick', 'viewFiles(id)');
 	user.addEventListener('click', function(element) {
-		viewFiles(id);
+		viewFiles(user.id);
 	});
 	user.appendChild(folderImgDiv);
 	user.appendChild(textDiv);
@@ -49,28 +46,19 @@ function userListTraverse(value) {
 }
 
 function viewFiles(user, privilege="default") {
-	var xmlhttp = new XMLHttpRequest();
-	xmlhttp.onreadystatechange = function() {
 	currentDir = user;
 	currentPrivilege = privilege;
-		if (this.readyState == 4 && this.status == 200) {
-			document.getElementById("dispdir").innerHTML = user;
-			var myfolderlist = document.getElementById("myfolderlist");
-			while (myfolderlist.firstChild) {
-				myfolderlist.removeChild(myfolderlist.firstChild);
-			}
-			var parsedJsonObj = JSON.parse(this.responseText);
-			for (x in parsedJsonObj) {
-				openFolder(x, parsedJsonObj[x]);
-			}
-		}
-	};
-	if(privilege=="default"){
-		xmlhttp.open("GET", "../ViewFolderController?shareduser=" + user, true);
-	} else {
-		xmlhttp.open("GET", "../ViewFolderForLocationController?location=" + user + "&privilege=" + privilege, true);
+	location.hash = user;
+}
+
+function setOwner(user){
+	owner = user;
+	if(owner == "null"){
+		logout();
+		return;
 	}
-	xmlhttp.send();
+	viewFiles(user);
+	onHashChange();
 }
 
 function openFolder(file, privilege) {
@@ -90,6 +78,7 @@ function openFolder(file, privilege) {
 		fileImg.setAttribute('width', '25px');
 		fileImg.setAttribute('height', '25px');
 		button.appendChild(fileImg);
+		button.setAttribute('ondblclick', "openFile('"+file+"','"+privilege+"')");
 	} else {
 		var folderImg = document.createElement('img');
 		folderImg.setAttribute('src', '../images/folder.png');
@@ -99,11 +88,17 @@ function openFolder(file, privilege) {
 		button.appendChild(folderImg);
 		button.setAttribute('ondblclick', "viewFiles('"+file+"','"+privilege+"')");
 	}
-	if (privilege != "owner") {
-		button.appendChild(document.createTextNode(" " + file + " (" + privilege
+	var btnText;
+	if(file.indexOf('/') != -1){
+		btnText = file.substring(file.lastIndexOf('/')+1);
+	} else {
+		btnText = file;
+	}
+	if (privilege != "default") {
+		button.appendChild(document.createTextNode(" " + btnText + " (" + privilege
 				+ ")"));
 	} else {
-		button.appendChild(document.createTextNode(" " + file));
+		button.appendChild(document.createTextNode(" " + btnText));
 	}
 	item.appendChild(button);
 	document.getElementById("myfolderlist").appendChild(item);
@@ -131,7 +126,7 @@ function setBoxRightClick(){
 }
 
 function buttonRightClick(event, id){
-	if (currentPrivilege=="owner"){
+	if (currentPrivilege!="read" && currentPrivilege!="write"){
 		document.getElementById("selected").innerHTML = id;
 		selectedButton = id;
 		document.getElementById("buttonForm").style.display = "block";
@@ -141,7 +136,7 @@ function buttonRightClick(event, id){
 }
 
 function windowRightClick(event){
-	if(event.target.nodeName=="DIV" && (currentPrivilege=="owner" || currentPrivilege=="write")){
+	if(event.target.nodeName=="DIV" && (currentPrivilege=="write" || currentDir.startsWith(owner))){
 		document.getElementById("containerForm").style.display = "block";
 		document.getElementById("containerForm").style.left = event.clientX  + "px";
 		document.getElementById("containerForm").style.top = event.clientY  + "px";
@@ -160,9 +155,27 @@ function closeNewFolderForm(){
 	document.getElementById("newfolderForm").style.display = "none";
 }
 
+function closeNewFileForm(){
+	document.getElementById("newfileForm").style.display = "none";
+}
+
+function closeEditor(){
+	document.getElementById("textarea").value = '';
+	document.getElementById("editor").style.display = "none";
+}
+
+function closeShareFileForm(){
+	document.getElementById("shareFileForm").style.display = "none";
+}
+
 function newFolder(){
 	closeBoxForm();
 	document.getElementById("newfolderForm").style.display = "block";
+}
+
+function newFile(){
+	closeBoxForm();
+	document.getElementById("newfileForm").style.display = "block";
 }
 
 function deleteFile(){
@@ -172,30 +185,13 @@ function deleteFile(){
 			var successCheck = JSON.parse(this.responseText);
 			if(successCheck.success == "true"){
 				closeButtonForm();
-				viewFiles(currentDir, currentPrivilege);
+				onHashChange();
 			} else {
 				alert(successCheck.success);
 			}
 		}
 	};
 	xmlhttp.open("GET", "../DeleteFileController?location=" + selectedButton, true);
-	xmlhttp.send();
-}
-
-function shareFile(){
-	var xmlhttp = new XMLHttpRequest();
-	xmlhttp.onreadystatechange = function() {
-		if (this.readyState == 4 && this.status == 200) {
-			var successCheck = JSON.parse(this.responseText);
-			if(successCheck.success == "true"){
-				closeButtonForm();
-				viewFiles(currentDir, currentPrivilege);
-			} else {
-				alert(successCheck.success);
-			}
-		}
-	};
-	xmlhttp.open("GET", "../ShareFileController?location=" + selectedButton, true);
 	xmlhttp.send();
 }
 
@@ -207,7 +203,7 @@ function newFolderHandler(){
 			var successCheck = JSON.parse(this.responseText);
 			if(successCheck.success == "true"){
 				closeNewFolderForm();
-				viewFiles(currentDir, currentPrivilege);
+				onHashChange();
 			} else {
 				alert(successCheck.success);
 			}
@@ -216,9 +212,155 @@ function newFolderHandler(){
 	xmlhttp.open("GET", "../NewFolderController?location=" + currentDir +"&foldername=" + folderName, true);
 	xmlhttp.send();
 }
+var fileName;
+function newFileHandler(){
+	closeNewFileForm();
+	fileName = document.getElementById("filename").value;
+	document.getElementById("displayfilename").innerHTML = fileName+".txt";
+	document.getElementById("editor").style.display = "block";
+}
+
+function submitFile(){
+	var text = document.getElementById("textarea").value;
+	text = text.replace(/\n/g,"%0D%0A");
+	var xmlhttp = new XMLHttpRequest();
+	fileName = document.getElementById("displayfilename").innerHTML;
+	fileName = fileName.substring(fileName.lastIndexOf('/'), fileName.length);
+	xmlhttp.onreadystatechange = function() {
+		if (this.readyState == 4 && this.status == 200) {
+			var successCheck = JSON.parse(this.responseText);
+			if(successCheck.success == "true"){
+				closeEditor();
+				onHashChange();
+			} else {
+				alert(successCheck.success);
+			}
+		}
+	};
+	if(document.getElementById("editbutton").style.display == "inline-block"){
+		xmlhttp.open("POST", "../EditFileController?location=" + currentDir + "&filename=" + fileName + "&text=" + text, true);
+	} else {		
+		xmlhttp.open("POST", "../NewFileController?location=" + currentDir + "&filename=" + fileName + "&text=" + text, true);
+	}
+	xmlhttp.send();
+}
+
+function openFile(fileName, privilege){
+	var xmlhttp = new XMLHttpRequest();
+	xmlhttp.onreadystatechange = function() {
+		if (this.readyState == 4 && this.status == 200) {
+			var successCheck = JSON.parse(this.responseText);
+			if(successCheck.success == "true"){
+				document.getElementById("textarea").value = successCheck.content;
+				document.getElementById("textarea").disabled = true;
+				document.getElementById("savebutton").style.display = "none";
+				if(privilege=="read"){
+					fileName = fileName + " (Read only mode)";
+				} else {
+					document.getElementById("editbutton").style.display = "inline-block";
+				}
+				document.getElementById("displayfilename").innerHTML = fileName;
+				document.getElementById("editor").style.display = "block";
+			} else {
+				alert(successCheck.success);
+			}
+		}
+	};
+	xmlhttp.open("GET", "../OpenFileController?location=" + currentDir + "&filename=" + fileName, true);
+	xmlhttp.send();
+}
+
+function editFile(){
+	document.getElementById("textarea").disabled = false;
+	document.getElementById("savebutton").style.display = "inline-block";
+}
+
+function shareFile(){
+	var readSelect = document.getElementById("readselect");
+	while (readSelect.firstChild) {
+		readSelect.removeChild(readSelect.firstChild);
+	}
+	var xmlhttp = new XMLHttpRequest();
+	xmlhttp.onreadystatechange = function() {
+		if (this.readyState == 4 && this.status == 200) {
+			var parcedJsonObject = JSON.parse(this.responseText);
+			if(parcedJsonObject.success == "true"){
+				closeButtonForm();
+				document.getElementById("selectedFile").innerHTML = selectedButton;
+				var option = document.createElement('option');
+				parcedJsonObject.users.forEach(addOption);
+				document.getElementById("shareFileForm").style.display = "block";
+			} else {
+				alert(successCheck.success);
+			}
+		}
+	};
+	xmlhttp.open("GET", "../AllUserListController?location=" + selectedButton, true);
+	xmlhttp.send();
+}
+
+function addOption(value){
+	var option = document.createElement('option');
+	option.appendChild(document.createTextNode(value));
+	document.getElementById("readselect").appendChild(option);
+}
+
+function shareFileHandler(){
+	var readSelect = document.getElementById("readselect");
+	var getPrivilege;
+	if (document.getElementById('read').checked) {
+		getPrivilege = "read"
+	} else {
+		getPrivilege = "write"
+	}
+	var opt = [];
+	for (var i=0, len=readSelect.options.length; i<len; i++) {
+		if(readSelect.options[i].selected)
+			opt.push(readSelect.options[i].value);
+	}
+	alert(opt);
+	var xmlhttp = new XMLHttpRequest();
+	xmlhttp.onreadystatechange = function() {
+		if (this.readyState == 4 && this.status == 200) {
+			var successCheck = JSON.parse(this.responseText);
+			if(successCheck.success == "true"){
+				closeShareFileForm();
+			} else {
+				alert(successCheck.success);
+			}
+		}
+	};
+	xmlhttp.open("POST", "../ShareFileController?location=" + selectedButton + "&privilege=" + getPrivilege, true);
+	xmlhttp.send(opt);
+}
+
+function viewShare(){
+	var xmlhttp = new XMLHttpRequest();
+	xmlhttp.onreadystatechange = function() {
+		if (this.readyState == 4 && this.status == 200) {
+			var parsedJsonObj = JSON.parse(this.responseText);
+			document.getElementById("selectedFile").innerHTML = selectedButton;
+			var table = document.getElementById("table");
+			var editOption = document.createElement('button');
+			editOption.appendChild(document.createTextNode("Edit privilege"));
+			for (x in parsedJsonObj) {
+				var tr = document.createElement('tr');
+				var th = document.createElement('th');
+				th.appendChild(document.createTextNode(x));
+				tr.appendChild(th);
+				th.appendChild(document.createTextNode(parsedJsonObj[x]));
+				tr.appendChild(th);
+				tr.appendChild(editOption);
+				table.appendChild(tr);
+				document.getElementById("viewShareForm").style.display = "block";
+			}
+		}
+	};
+	xmlhttp.open("GET", "../ViewShareController?location=" + selectedButton, true);
+	xmlhttp.send();
+}
 
 function logout(){
-	var folderName = document.getElementById("foldername").value;
 	var xmlhttp = new XMLHttpRequest();
 	xmlhttp.onreadystatechange = function() {
 		if (this.readyState == 4 && this.status == 200) {
@@ -228,5 +370,32 @@ function logout(){
 		}
 	};
 	xmlhttp.open("GET", "../LogoutController", true);
+	xmlhttp.send();
+}
+
+function onHashChange(){
+	window.scrollTo(0, 0);
+	var xmlhttp = new XMLHttpRequest();
+	var hashValue = window.location.hash.substring(1);
+	xmlhttp.onreadystatechange = function() {
+		if (this.readyState == 4 && this.status == 200) {
+			document.getElementById("dispdir").innerHTML = hashValue;
+			var myfolderlist = document.getElementById("myfolderlist");
+			while (myfolderlist.firstChild) {
+				myfolderlist.removeChild(myfolderlist.firstChild);
+			}
+			var parsedJsonObj = JSON.parse(this.responseText);
+			for (x in parsedJsonObj) {
+				openFolder(x, parsedJsonObj[x]);
+			}
+		}
+	};
+	if (hashValue.indexOf('/') == -1){
+		console.log('user');
+		xmlhttp.open("GET", "../ViewFolderController?shareduser=" + hashValue, true);
+	} else {
+		console.log('location');
+		xmlhttp.open("GET", "../ViewFolderForLocationController?location=" + hashValue, true);
+	}
 	xmlhttp.send();
 }

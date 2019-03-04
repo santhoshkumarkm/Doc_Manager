@@ -33,7 +33,7 @@ public class ViewFolderController extends HttpServlet {
 		String userName = (String) session.getAttribute("user");
 		Map<String, String> crunchifyMap = new LinkedHashMap<String, String>();
 		if (sharedUser.equals(userName)) {
-			crunchifyMap.put(userName, "owner");
+			crunchifyMap = ClientsInfoDao.getRootUserFiles(userName);
 		} else {
 			crunchifyMap = ClientsInfoDao.getSharedFilesForAnUser(sharedUser, userName);
 		}

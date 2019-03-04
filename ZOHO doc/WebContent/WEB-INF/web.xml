@@ -103,6 +103,15 @@
 		<servlet-name>ViewFolderForLocationController</servlet-name>
 		<url-pattern>/ViewFolderForLocationController</url-pattern>
 	</servlet-mapping>
+	
+	<servlet>
+		<servlet-name>NewFileController</servlet-name>
+		<servlet-class>com.controller.NewFileController</servlet-class>
+	</servlet>
+	<servlet-mapping>
+		<servlet-name>NewFileController</servlet-name>
+		<url-pattern>/NewFileController</url-pattern>
+	</servlet-mapping>
 
 	<servlet>
 		<servlet-name>SharedUserListController</servlet-name>

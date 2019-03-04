@@ -6,9 +6,12 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
+
+import org.json.simple.JSONArray;
 
 public class ClientsInfoDao {
 	static Connection con;
@@ -23,40 +26,48 @@ public class ClientsInfoDao {
 		}
 	}
 
-	static public long insertFile(String location) {
+	static public void insertFile(String location) {
 		PreparedStatement stmt = null;
-		Statement stmt2 = null;
-		long primaryKeyValue = 0;
-		ResultSet generatedKeys = null, rs = null;
+		int firstIndex = location.indexOf('/');
+		int lastIndex = location.lastIndexOf('/');
+		String ownerName = location.substring(0, firstIndex);
+		String fileLocation = (firstIndex == lastIndex) ? "" : location.substring(firstIndex + 1, lastIndex);
+		String fileName = location.substring(lastIndex + 1);
 		try {
-			stmt = con.prepareStatement("insert ignore into files_info values(null,?)",
+			stmt = con.prepareStatement("insert ignore into files_info values(null,?,?,?)",
 					Statement.RETURN_GENERATED_KEYS);
-			stmt.setString(1, location);
+			stmt.setString(1, ownerName);
+			stmt.setString(2, fileLocation);
+			stmt.setString(3, fileName);
 			stmt.executeUpdate();
-			generatedKeys = stmt.getGeneratedKeys();
-			if (generatedKeys.next()) {
-				primaryKeyValue = generatedKeys.getLong(1);
-			} else {
-				stmt2 = con.createStatement();
-				String qq = "select id from files_info where filelocation='" + location + "'";
-				rs = stmt2.executeQuery(qq);
-				if (rs.next()) {
-					primaryKeyValue = rs.getLong(1);
-				}
-			}
 		} catch (SQLException e) {
 			e.printStackTrace();
 		} finally {
 			try {
-				if (generatedKeys != null)
-					generatedKeys.close();
+				if (stmt != null)
+					stmt.close();
 			} catch (Exception e) {
 			}
-			try {
-				if (rs != null)
-					rs.close();
-			} catch (Exception e) {
-			}
+		}
+	}
+
+	public static void deleteFile(String location) {
+		Statement stmt = null, stmt2 = null;
+		int firstIndex = location.indexOf('/');
+		int lastIndex = location.lastIndexOf('/');
+		String ownerName = location.substring(0, firstIndex);
+		String fileLocation = (firstIndex == lastIndex) ? "" : location.substring(firstIndex + 1, lastIndex);
+		String fileName = location.substring(lastIndex + 1);
+		try {
+			stmt = con.createStatement();
+			stmt.executeUpdate("delete from files_info where ownername = '" + ownerName + "' and filelocation = '"
+					+ fileLocation + "' and filename = '" + fileName + "'");
+			stmt2 = con.createStatement();
+			stmt2.executeUpdate("delete from files_info where ownername = '" + ownerName + "' and filelocation like '%"
+					+ fileName + "%'");
+		} catch (SQLException e) {
+			e.printStackTrace();
+		} finally {
 			try {
 				if (stmt != null)
 					stmt.close();
@@ -67,27 +78,7 @@ public class ClientsInfoDao {
 					stmt2.close();
 			} catch (Exception e) {
 			}
-
 		}
-		return primaryKeyValue;
-	}
-
-	public static long deleteFile(String location) {
-		Statement stmt = null;
-		long primaryKeyValue = 0;
-		try {
-			stmt = con.createStatement();
-			stmt.executeUpdate("delete from files_info where filelocation = '" + location + "'");
-		} catch (SQLException e) {
-			e.printStackTrace();
-		} finally {
-			try {
-				if (stmt != null)
-					stmt.close();
-			} catch (Exception e) {
-			}
-		}
-		return primaryKeyValue;
 	}
 
 	public static LinkedHashSet<String> getSharedUserNamesForAnUser(String userName) {
@@ -97,11 +88,11 @@ public class ClientsInfoDao {
 		try {
 			stmt = con.createStatement();
 			rs = stmt.executeQuery(
-					"select f.filelocation from files_info f inner join shared_users_info u on f.id = u.file_id inner join clients_info c on u.user_id = c.id where c.name ='"
+					"select f.ownername from files_info f inner join shared_users_info u on f.id = u.file_id inner join clients_info c on u.user_id = c.id where c.name ='"
 							+ userName + "'");
 			while (rs.next()) {
-				String fileLocation = rs.getString(1);
-				set.add(fileLocation.substring(0, fileLocation.indexOf('/')));
+				String owner = rs.getString(1);
+				set.add(owner);
 			}
 		} catch (SQLException e) {
 			e.printStackTrace();
@@ -127,41 +118,16 @@ public class ClientsInfoDao {
 		try {
 			stmt = con.createStatement();
 			rs = stmt.executeQuery(
-					"select f.filelocation, u.privilege from files_info f inner join shared_users_info u on f.id = u.file_id inner join clients_info c on u.user_id = c.id where c.name ='"
-							+ user + "' and f.filelocation like '" + sharedUser + "%'");
+					"select f.ownername, f.filelocation, f.filename, u.privilege from files_info f inner join shared_users_info u on f.id = u.file_id inner join clients_info c on u.user_id = c.id where c.name ='"
+							+ user + "' and f.ownername = '" + sharedUser + "'");
 			while (rs.next()) {
-				map.put(rs.getString(1), rs.getString(2));
-			}
-		} catch (SQLException e) {
-			e.printStackTrace();
-		} finally {
-			try {
-				if (stmt != null)
-					stmt.close();
-			} catch (Exception e) {
-			}
-			try {
-				if (rs != null)
-					rs.close();
-			} catch (Exception e) {
-			}
-		}
-		return map;
-	}
-
-	public static LinkedHashMap<String, String> getSharedFilesForALocation(String location, String privilege) {
-		Statement stmt = null;
-		ResultSet rs = null;
-		LinkedHashMap<String, String> map = new LinkedHashMap<String, String>();
-		try {
-			stmt = con.createStatement();
-			rs = stmt.executeQuery("select filelocation from files_info where filelocation like '" + location + "/%'");
-			while (rs.next()) {
-				String result = rs.getString(1);
-				if (result.substring(location.length(), result.length()).indexOf('/') == result
-						.substring(location.length(), result.length()).lastIndexOf('/')) {
-					map.put(result, privilege);
+				String result = null;
+				if (rs.getString(2).equals("")) {
+					result = rs.getString(1) + "/" + rs.getString(3);
+				} else {
+					result = rs.getString(1) + "/" + rs.getString(2) + "/" + rs.getString(3);
 				}
+				map.put(result, rs.getString(4));
 			}
 		} catch (SQLException e) {
 			e.printStackTrace();
@@ -182,11 +148,229 @@ public class ClientsInfoDao {
 
 	public static String checkAccess(String location, String rootUser, String sharedUser) {
 		LinkedHashMap<String, String> fileListMap = getSharedFilesForAnUser(sharedUser, rootUser);
-		for(Map.Entry<String, String> entry : fileListMap.entrySet()) {
-			if(location.contains(entry.getKey())) {
+		for (Map.Entry<String, String> entry : fileListMap.entrySet()) {
+			if (location.contains(entry.getKey())) {
 				return entry.getValue();
 			}
 		}
 		return "denied";
+	}
+
+	public static JSONArray allUserList(String rootUser, String location) {
+		Statement stmt = null;
+		ResultSet rs = null;
+		JSONArray userListArray = new JSONArray();
+		long fileId = 0;
+		try {
+			fileId = getFileId(location);
+			stmt = con.createStatement();
+			rs = stmt.executeQuery(
+					"select name from clients_info where id NOT IN (select user_id from shared_users_info where file_id = '"
+							+ fileId + "')");
+			while (rs.next()) {
+				if (rs.getString(1).equals(rootUser)) {
+					continue;
+				}
+				userListArray.add(rs.getString(1));
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		} finally {
+			try {
+				if (rs != null)
+					rs.close();
+			} catch (Exception e) {
+			}
+			try {
+				if (stmt != null)
+					stmt.close();
+			} catch (Exception e) {
+			}
+		}
+		return userListArray;
+	}
+
+	public static Map<String, String> getSharedFilesForALocation(String location, String user) {
+		int firstIndex = location.indexOf('/');
+		String ownerName = location.substring(0, firstIndex);
+		String fileLocation = location.substring(firstIndex + 1);
+		Statement stmt = null;
+		ResultSet rs = null;
+		HashMap<String, String> map = new HashMap<String, String>();
+		try {
+			stmt = con.createStatement();
+			rs = stmt.executeQuery(
+					"select f.ownername,f.filelocation,f.filename, u.privilege from files_info f inner join shared_users_info u on f.id = u.file_id inner join clients_info c on u.user_id = c.id where c.name ='"
+							+ user + "' and f.ownerName = '" + ownerName + "' and f.filelocation = '" + fileLocation
+							+ "'");
+			while (rs.next()) {
+				String result = null;
+				if (rs.getString(2).equals("")) {
+					result = rs.getString(1) + "/" + rs.getString(3);
+				} else {
+					result = rs.getString(1) + "/" + rs.getString(2) + "/" + rs.getString(3);
+				}
+				map.put(result, rs.getString(4));
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		} finally {
+			try {
+				if (stmt != null)
+					stmt.close();
+			} catch (Exception e) {
+			}
+			try {
+				if (rs != null)
+					rs.close();
+			} catch (Exception e) {
+			}
+		}
+		return map;
+	}
+
+	public static Map<String, String> getRootUserFiles(String user) {
+		Statement stmt = null;
+		ResultSet rs = null;
+		HashMap<String, String> map = new HashMap<String, String>();
+		try {
+			stmt = con.createStatement();
+			if (user.indexOf('/') == -1) {
+				rs = stmt.executeQuery("select ownername, filelocation, filename from files_info where ownerName = '"
+						+ user + "' and filelocation = ''");
+			} else {
+				int firstIndex = user.indexOf('/');
+				String ownerName = user.substring(0, firstIndex);
+				String fileLocation = user.substring(firstIndex + 1);
+				rs = stmt.executeQuery("select ownername, filelocation, filename from files_info where ownerName = '"
+						+ ownerName + "' and fileLocation = '" + fileLocation + "'");
+			}
+			while (rs.next()) {
+				String result = null;
+				if (rs.getString(2).equals("")) {
+					result = rs.getString(1) + "/" + rs.getString(3);
+				} else {
+					result = rs.getString(1) + "/" + rs.getString(2) + "/" + rs.getString(3);
+				}
+				map.put(result, "default");
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		} finally {
+			try {
+				if (stmt != null)
+					stmt.close();
+			} catch (Exception e) {
+			}
+			try {
+				if (rs != null)
+					rs.close();
+			} catch (Exception e) {
+			}
+		}
+		return map;
+	}
+
+	private static long getFileId(String location) {
+		int firstIndex = location.indexOf('/');
+		int lastIndex = location.lastIndexOf('/');
+		String ownerName = location.substring(0, firstIndex);
+		String fileLocation = (firstIndex == lastIndex) ? "" : location.substring(firstIndex + 1, lastIndex);
+		String fileName = location.substring(lastIndex + 1);
+		Statement stmt1 = null;
+		ResultSet rs1 = null;
+		long fileId = 0;
+		try {
+			stmt1 = con.createStatement();
+			rs1 = stmt1.executeQuery("select id from files_info where ownername = '" + ownerName
+					+ "' and filelocation = '" + fileLocation + "' and filename = '" + fileName + "'");
+			while (rs1.next()) {
+				fileId = rs1.getLong(1);
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		} finally {
+			try {
+				if (stmt1 != null)
+					stmt1.close();
+			} catch (Exception e) {
+			}
+			try {
+				if (rs1 != null)
+					rs1.close();
+			} catch (Exception e) {
+			}
+		}
+		return fileId;
+	}
+
+	public static void shareFile(String user, String location, String privilege) {
+		PreparedStatement prepStmt = null;
+		Statement stmt2 = null;
+		ResultSet rs2 = null;
+		long userId = 0, fileId = 0;
+		try {
+			fileId = getFileId(location);
+			stmt2 = con.createStatement();
+			rs2 = stmt2.executeQuery("select id from clients_info where name = '" + user + "'");
+			while (rs2.next()) {
+				userId = rs2.getLong(1);
+			}
+			prepStmt = con.prepareStatement("insert ignore into shared_users_info values(?,?,?)",
+					Statement.RETURN_GENERATED_KEYS);
+			prepStmt.setLong(1, fileId);
+			prepStmt.setLong(2, userId);
+			prepStmt.setString(3, privilege);
+			prepStmt.executeUpdate();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		} finally {
+			try {
+				if (stmt2 != null)
+					stmt2.close();
+			} catch (Exception e) {
+			}
+			try {
+				if (prepStmt != null)
+					prepStmt.close();
+			} catch (Exception e) {
+			}
+			try {
+				if (rs2 != null)
+					rs2.close();
+			} catch (Exception e) {
+			}
+		}
+	}
+
+	public static LinkedHashMap<String, String> sharedUsersForAFile(String location) {
+		LinkedHashMap<String, String> map = new LinkedHashMap<String, String>();
+		Statement stmt = null;
+		ResultSet rs = null;
+		long fileId = 0;
+		try {
+			fileId = getFileId(location);
+			stmt = con.createStatement();
+			rs = stmt.executeQuery(
+					"select c.name, s.privilege from clients_info c inner join shared_users_info s where s.id = '"
+							+ fileId + "')");
+			while (rs.next()) {
+				map.put(rs.getString(1), rs.getString(2));
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		} finally {
+			try {
+				if (rs != null)
+					rs.close();
+			} catch (Exception e) {
+			}
+			try {
+				if (stmt != null)
+					stmt.close();
+			} catch (Exception e) {
+			}
+		}
+		return map;
 	}
 }
