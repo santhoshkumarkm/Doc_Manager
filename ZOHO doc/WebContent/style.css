@@ -58,6 +58,21 @@
 	color: white;
 }
 
+#back {
+	background-color: #D7DBDD;
+	padding: 0px 10px 0px 10px;
+	width: 40px;
+	height: 28px; float : left;
+	font-family: sans-serif;
+	color: black;
+	bottom: 0;
+	float: left;
+}
+
+button:focus {
+	outline: 0;
+}
+
 #viewbox {
 	padding: 10px 10px 10px 10px;
 	overflow: auto;
@@ -92,7 +107,6 @@
 
 .openfolderbutton:focus {
 	background-color: #E74C3C;
-	outline: none;
 }
 
 .form-popup {
@@ -102,6 +116,7 @@
 	z-index: 1;
 	border: 3px solid black;
 	left: 40%;
+	width: auto;
 }
 
 .editor-popup {
@@ -140,4 +155,20 @@
 .form-container .cancel {
 	color: white;
 	background-color: #E74C3C;
+}
+
+table, td, th {
+	border: 1px solid black;
+	margin: 5%;
+	border-collapse: collapse;
+}
+
+th {
+	height: 30px;
+	width: 100px;
+}
+
+td {
+	width: 100px;
+	align: center;
 }

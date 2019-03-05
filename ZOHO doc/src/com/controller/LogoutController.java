@@ -3,6 +3,7 @@ package com.controller;
 import java.io.IOException;
 import java.io.PrintWriter;
 
+import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -26,7 +27,7 @@ public class LogoutController extends HttpServlet {
 	protected void doGet(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
 		HttpSession session = request.getSession();
-		session.setAttribute("user", null);
+		session.setAttribute("user", "null");
 		JSONObject jsonObject = new JSONObject();
 		jsonObject.put("success", "true");
 		response.setContentType("application/json");

@@ -3,6 +3,7 @@
 <!DOCTYPE html>
 <html>
 <head>
+<% String user = (String) session.getAttribute("user"); %>
 <meta charset="UTF-8">
 <title>Owner</title>
 <script type="text/javascript" src="../script.js"></script>
@@ -12,9 +13,7 @@
 	<%@page import="java.util.ArrayList"%>
 	<%@page import="java.util.List"%>
 	<%@page import="com.utilities.ClientUtilities"%>
-	<%
-		String user = (String) session.getAttribute("user");
-	%>
+	
 	<script type="text/javascript">
 		setOwner('<%=user%>');
 	</script>
@@ -24,7 +23,7 @@
 			<div class="icon">
 				<img src='../images/folder.png' class="icon" alt="Folder Image">
 			</div>
-			<div class="text">root (<%=user%>)</div>
+			<div class="text"><%=user%> (root)</div>
 		</div>
 	</div>
 
@@ -35,10 +34,9 @@
 				Welcome "<%=user%>"
 			</h4>
 		</div>
-		<div style="float: right; padding: 10px 10px; cursor: pointer;">
+		<div style="float: right; margin: 10px; cursor: pointer;" onclick="logout()">
 			<h4
-				style="display: inline; color: white; background-color: black; padding: 5px 10px 5px 10px; font-family: sans-serif;"
-				onclick="logout()">
+				style="display: inline; color: white; background-color: black; padding: 5px 10px 5px 10px; font-family: sans-serif;">
 				Logout
 			</h4>
 		</div>
@@ -79,12 +77,9 @@
 		<div
 			style="width: auto; background-color: black; height: 100%; padding: 10px 30px 10px 30px;">
 			<div id="header" align="center" style="float: left;">My Files</div>
-			<div style="float: right;">
-				<input type="button" onclick="goBack()" value="Back"
-					style="cursor: 'pointer';">
-			</div>
+			<button id ="back" type="button" style="cursor: 'pointer'; font-size: 20px;" onclick="goBack()" value="Back">&#8592;</button>
 			<div style='clear: both'></div>
-			<div id="viewbox">
+			<div id="viewbox" onclick = "closeAll()">
 				<b>Current directory: <font color="#E74C3C"><i><span
 							id="dispdir">Please select a folder</span></i></font></b>
 				<ul style="list-style-type: none;" id="myfolderlist"></ul>
@@ -138,9 +133,10 @@
   				<tr>
     				<th>User</th>
     				<th>Privilege</th>
-    				<th></th>
   				</tr>
   			</table>
+  			<button type="button" class="rightclickmenubtn cancel"
+				onclick="closeViewShareForm()">Close</button>
 		</form>
 	</div>
 
@@ -149,7 +145,7 @@
 			<div id="displayfilename" style="float: left; display: inline;">file
 				name</div>
 			<div style="float: right;">
-			<button type="button" id="editbutton" style="color: white; background-color: blue;"
+			<button type="button" id="editbutton" style="color: white; background-color: blue; display: none;"
 					onclick="editFile()">Edit</button>
 				<button type="button" id="savebutton"
 					style="color: white; background-color: green;"

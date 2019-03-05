@@ -38,7 +38,7 @@ function userListTraverse(value) {
 	user.setAttribute('class', 'container');
 	user.setAttribute('id', value);
 	user.addEventListener('click', function(element) {
-		viewFiles(user.id);
+		viewFiles(user.id, "read");
 	});
 	user.appendChild(folderImgDiv);
 	user.appendChild(textDiv);
@@ -57,7 +57,11 @@ function setOwner(user){
 		logout();
 		return;
 	}
-	viewFiles(user);
+	if(location.hash == ""){
+		viewFiles(user);
+	} else {
+		currentDir = window.location.hash.substring(1);
+	}
 	onHashChange();
 }
 
@@ -126,8 +130,8 @@ function setBoxRightClick(){
 }
 
 function buttonRightClick(event, id){
-	if (currentPrivilege!="read" && currentPrivilege!="write"){
-		document.getElementById("selected").innerHTML = id;
+	if (currentPrivilege != "read" && currentPrivilege != "write"){
+		document.getElementById("selected").innerHTML = id.substring(id.lastIndexOf('/')+1);
 		selectedButton = id;
 		document.getElementById("buttonForm").style.display = "block";
 		document.getElementById("buttonForm").style.left = event.clientX  + "px";
@@ -141,6 +145,11 @@ function windowRightClick(event){
 		document.getElementById("containerForm").style.left = event.clientX  + "px";
 		document.getElementById("containerForm").style.top = event.clientY  + "px";
 	}
+}
+
+function closeAll(){
+	closeButtonForm();
+	closeBoxForm();
 }
 
 function closeButtonForm(){
@@ -168,14 +177,8 @@ function closeShareFileForm(){
 	document.getElementById("shareFileForm").style.display = "none";
 }
 
-function newFolder(){
-	closeBoxForm();
-	document.getElementById("newfolderForm").style.display = "block";
-}
-
-function newFile(){
-	closeBoxForm();
-	document.getElementById("newfileForm").style.display = "block";
+function closeViewShareForm(){
+	document.getElementById("viewShareForm").style.display = "none";
 }
 
 function deleteFile(){
@@ -195,6 +198,11 @@ function deleteFile(){
 	xmlhttp.send();
 }
 
+function newFolder(){
+	closeBoxForm();
+	document.getElementById("newfolderForm").style.display = "block";
+}
+
 function newFolderHandler(){
 	var folderName = document.getElementById("foldername").value;
 	var xmlhttp = new XMLHttpRequest();
@@ -212,6 +220,12 @@ function newFolderHandler(){
 	xmlhttp.open("GET", "../NewFolderController?location=" + currentDir +"&foldername=" + folderName, true);
 	xmlhttp.send();
 }
+
+function newFile(){
+	closeBoxForm();
+	document.getElementById("newfileForm").style.display = "block";
+}
+
 var fileName;
 function newFileHandler(){
 	closeNewFileForm();
@@ -233,7 +247,7 @@ function submitFile(){
 				closeEditor();
 				onHashChange();
 			} else {
-				alert(successCheck.success);
+				(successCheck.success);
 			}
 		}
 	};
@@ -286,7 +300,7 @@ function shareFile(){
 			var parcedJsonObject = JSON.parse(this.responseText);
 			if(parcedJsonObject.success == "true"){
 				closeButtonForm();
-				document.getElementById("selectedFile").innerHTML = selectedButton;
+				document.getElementById("selectedFile").innerHTML = selectedButton.substring(selectedButton.lastIndexOf('/')+1);
 				var option = document.createElement('option');
 				parcedJsonObject.users.forEach(addOption);
 				document.getElementById("shareFileForm").style.display = "block";
@@ -318,7 +332,6 @@ function shareFileHandler(){
 		if(readSelect.options[i].selected)
 			opt.push(readSelect.options[i].value);
 	}
-	alert(opt);
 	var xmlhttp = new XMLHttpRequest();
 	xmlhttp.onreadystatechange = function() {
 		if (this.readyState == 4 && this.status == 200) {
@@ -339,18 +352,41 @@ function viewShare(){
 	xmlhttp.onreadystatechange = function() {
 		if (this.readyState == 4 && this.status == 200) {
 			var parsedJsonObj = JSON.parse(this.responseText);
-			document.getElementById("selectedFile").innerHTML = selectedButton;
+			closeButtonForm();
+			if(Object.keys(parsedJsonObj)[0] == "notshared"){
+				alert("Not shared to anyone");
+				return;
+			}
+			document.getElementById("viewFile").innerHTML = selectedButton.substring(selectedButton.lastIndexOf('/')+1);
 			var table = document.getElementById("table");
-			var editOption = document.createElement('button');
-			editOption.appendChild(document.createTextNode("Edit privilege"));
+			while (table.firstChild) {
+				table.removeChild(table.firstChild);
+			}
+			var trHeader = document.createElement('tr');
+			var th1 = document.createElement('th');
+			th1.appendChild(document.createTextNode("User"));
+			var th2 = document.createElement('th');
+			th2.appendChild(document.createTextNode("Privilege"));
+			trHeader.appendChild(th1);
+			trHeader.appendChild(th2);
+			table.appendChild(trHeader);
 			for (x in parsedJsonObj) {
+				var editOption = document.createElement('button');
+				var p = document.createElement('p');
+				p.innerHTML = "&#8644;";
+				editOption.appendChild(p);
+				editOption.setAttribute('id',x);
+				editOption.setAttribute('onclick', 'change(this.id)');
+//				editOption.setAttribute('display', 'inline-block');
 				var tr = document.createElement('tr');
-				var th = document.createElement('th');
-				th.appendChild(document.createTextNode(x));
-				tr.appendChild(th);
-				th.appendChild(document.createTextNode(parsedJsonObj[x]));
-				tr.appendChild(th);
-				tr.appendChild(editOption);
+				var td1 = document.createElement('td');
+				td1.appendChild(document.createTextNode(x));
+				tr.appendChild(td1);
+				var td2 = document.createElement('td');
+				td2.appendChild(document.createTextNode(parsedJsonObj[x] + " "));
+				td2.appendChild(editOption);
+				td2.setAttribute('align','right');
+				tr.appendChild(td2);
 				table.appendChild(tr);
 				document.getElementById("viewShareForm").style.display = "block";
 			}
@@ -360,13 +396,27 @@ function viewShare(){
 	xmlhttp.send();
 }
 
+function change(sharedUser){
+	var xmlhttp = new XMLHttpRequest();
+	xmlhttp.onreadystatechange = function() {
+		if (this.readyState == 4 && this.status == 200) {
+			var successCheck = JSON.parse(this.responseText);
+			if(successCheck.success == "true"){
+				closeViewShareForm();
+				viewShare();
+			}
+		}
+	};
+	xmlhttp.open("GET", "../ChangePrivilegeController?user=" + sharedUser +"&location=" + selectedButton, true);
+	xmlhttp.send();
+}
+
 function logout(){
 	var xmlhttp = new XMLHttpRequest();
 	xmlhttp.onreadystatechange = function() {
 		if (this.readyState == 4 && this.status == 200) {
 			var successCheck = JSON.parse(this.responseText);
-			alert("Logout successful");
-			window.location.replace("../index.jsp")
+			window.location.replace("../index.jsp");
 		}
 	};
 	xmlhttp.open("GET", "../LogoutController", true);

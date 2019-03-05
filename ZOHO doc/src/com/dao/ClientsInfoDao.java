@@ -352,8 +352,8 @@ public class ClientsInfoDao {
 			fileId = getFileId(location);
 			stmt = con.createStatement();
 			rs = stmt.executeQuery(
-					"select c.name, s.privilege from clients_info c inner join shared_users_info s where s.id = '"
-							+ fileId + "')");
+					"select c.name, s.privilege from clients_info c inner join shared_users_info s where s.file_id = '"
+							+ fileId + "' and c.id = s.user_id");
 			while (rs.next()) {
 				map.put(rs.getString(1), rs.getString(2));
 			}
@@ -371,6 +371,77 @@ public class ClientsInfoDao {
 			} catch (Exception e) {
 			}
 		}
+		if (map.size() == 0) {
+			map.put("notshared", "true");
+		}
 		return map;
+	}
+
+	public static void changePrivilege(String sharedUser, String location) {
+		Statement stmt = null, stmt1 = null;
+		ResultSet rs = null;
+		long fileId = 0, userId = 0;
+		try {
+			fileId = getFileId(location);
+			userId = getUserId(sharedUser);
+			stmt = con.createStatement();
+			rs = stmt.executeQuery("select privilege from shared_users_info where file_id = '" + fileId
+					+ "' and user_id = '" + userId + "'");
+			while (rs.next()) {
+				stmt1 = con.createStatement();
+				if (rs.getString(1).equals("read")) {
+					stmt1.executeUpdate("update shared_users_info set privilege = 'write' where file_id = '" + fileId
+							+ "' and user_id ='" + userId + "'");
+				} else {
+					stmt1.executeUpdate("update shared_users_info set privilege = 'read' where file_id = '" + fileId
+							+ "' and user_id ='" + userId + "'");
+				}
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		} finally {
+			try {
+				if (stmt != null)
+					stmt.close();
+			} catch (Exception e) {
+			}
+			try {
+				if (stmt1 != null)
+					stmt1.close();
+			} catch (Exception e) {
+			}
+			try {
+				if (rs != null)
+					rs.close();
+			} catch (Exception e) {
+			}
+		}
+	}
+
+	private static long getUserId(String user) {
+		long userId = 0;
+		Statement stmt1 = null;
+		ResultSet rs1 = null;
+		try {
+			stmt1 = con.createStatement();
+			rs1 = stmt1.executeQuery("select id from clients_info where name = '" + user + "'");
+			while (rs1.next()) {
+				userId = rs1.getLong(1);
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		} finally {
+			try {
+				if (stmt1 != null)
+					stmt1.close();
+			} catch (Exception e) {
+			}
+			try {
+				if (rs1 != null)
+					rs1.close();
+			} catch (Exception e) {
+			}
+		}
+		return userId;
 	}
 }

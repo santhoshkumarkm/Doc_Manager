@@ -2,8 +2,6 @@ package com.controller;
 
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.util.LinkedHashMap;
-import java.util.Map;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
@@ -16,9 +14,9 @@ import org.json.simple.JSONObject;
 
 import com.dao.ClientsInfoDao;
 
-@WebServlet("/ViewShareController")
-public class ViewShareController extends HttpServlet {
-	private static final long serialVersionUID = 50121L;
+@WebServlet("/ChangePrivilegeController")
+public class ChangePrivilegeController extends HttpServlet {
+	private static final long serialVersionUID = 5021L;
 	String defaultLocation;
 
 	public void init(ServletConfig config) throws ServletException {
@@ -28,10 +26,13 @@ public class ViewShareController extends HttpServlet {
 
 	protected void doGet(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
+		JSONObject jsonObject = new JSONObject();
+		String successState = "false";
+		String sharedUser = request.getParameter("user");
 		String location = request.getParameter("location");
-		Map<String, String> crunchifyMap = new LinkedHashMap<String, String>();
-		crunchifyMap = ClientsInfoDao.sharedUsersForAFile(location);
-		JSONObject jsonObject = new JSONObject(crunchifyMap);
+		ClientsInfoDao.changePrivilege(sharedUser, location);
+		successState = "true";
+		jsonObject.put("success", successState);
 		response.setContentType("application/json");
 		PrintWriter out = response.getWriter();
 		out.print(jsonObject);
