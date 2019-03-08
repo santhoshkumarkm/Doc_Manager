@@ -8,6 +8,7 @@ import java.util.Map;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
+import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -17,6 +18,7 @@ import org.json.simple.JSONObject;
 
 import com.dao.ClientsInfoDao;
 
+@WebServlet("/ViewFolderController")
 public class ViewFolderController extends HttpServlet {
 	private static final long serialVersionUID = 9L;
 	String defaultLocation;
@@ -34,8 +36,10 @@ public class ViewFolderController extends HttpServlet {
 		Map<String, String> crunchifyMap = new LinkedHashMap<String, String>();
 		if (sharedUser.equals(userName)) {
 			crunchifyMap = ClientsInfoDao.getRootUserFiles(userName);
+			session.setAttribute("privilege", "default");
 		} else {
 			crunchifyMap = ClientsInfoDao.getSharedFilesForAnUser(sharedUser, userName);
+			session.setAttribute("privilege", "read");
 		}
 		JSONObject jsonObject = new JSONObject(crunchifyMap);
 		response.setContentType("application/json");

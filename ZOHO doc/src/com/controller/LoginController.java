@@ -22,10 +22,8 @@ public class LoginController extends HttpServlet {
 		if (name.length() > 0 && password.length() > 0
 				&& LoginDao.checkClient(name, String.valueOf(password.hashCode()))) {
 			session.setAttribute("user", name);
-			session.setAttribute("loginState", "success");
 			site = "user/owner.jsp";
 		} else {
-			session.setAttribute("loginState", "error");
 			site = "index.jsp";
 		}
 		response.setStatus(response.SC_MOVED_TEMPORARILY);

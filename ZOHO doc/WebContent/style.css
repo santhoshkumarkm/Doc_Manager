@@ -172,3 +172,14 @@ td {
 	width: 100px;
 	align: center;
 }
+
+.removeshare {
+	background-color: red;
+	color: white;
+	height: 25px;
+}
+
+.editshare {
+	background-color: yellow;
+	height: 23px;
+}

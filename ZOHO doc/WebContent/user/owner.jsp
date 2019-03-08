@@ -9,14 +9,9 @@
 <script type="text/javascript" src="../script.js"></script>
 <link href="../style.css" rel="stylesheet" type="text/css">
 </head>
-<body style="background-color: black;" onhashchange="onHashChange()">
+<body style="background-color: black;" onload ="setOwner('<%=user%>')" onhashchange = "onHashChange()">
 	<%@page import="java.util.ArrayList"%>
 	<%@page import="java.util.List"%>
-	<%@page import="com.utilities.ClientUtilities"%>
-	
-	<script type="text/javascript">
-		setOwner('<%=user%>');
-	</script>
 
 	<div class="topbar" id="topbar">
 		<div class="container" id="root" onclick="viewFiles('<%=user%>')">

@@ -41,75 +41,7 @@
 		<url-pattern>/NavigationController</url-pattern>
 	</servlet-mapping>
 
-	<servlet>
-		<servlet-name>UploadFileController</servlet-name>
-		<servlet-class>com.controller.UploadFileController</servlet-class>
-	</servlet>
-	<servlet-mapping>
-		<servlet-name>UploadFileController</servlet-name>
-		<url-pattern>/UploadFileController</url-pattern>
-	</servlet-mapping>
-
-	<servlet>
-		<servlet-name>NewFolderController</servlet-name>
-		<servlet-class>com.controller.NewFolderController</servlet-class>
-	</servlet>
-	<servlet-mapping>
-		<servlet-name>NewFolderController</servlet-name>
-		<url-pattern>/NewFolderController</url-pattern>
-	</servlet-mapping>
-
-	<servlet>
-		<servlet-name>DeleteFileController</servlet-name>
-		<servlet-class>com.controller.DeleteFileController</servlet-class>
-	</servlet>
-	<servlet-mapping>
-		<servlet-name>DeleteFileController</servlet-name>
-		<url-pattern>/DeleteFileController</url-pattern>
-	</servlet-mapping>
-
-	<servlet>
-		<servlet-name>ShareFileController</servlet-name>
-		<servlet-class>com.controller.ShareFileController</servlet-class>
-	</servlet>
-	<servlet-mapping>
-		<servlet-name>ShareFileController</servlet-name>
-		<url-pattern>/ShareFileController</url-pattern>
-	</servlet-mapping>
-
-	<servlet>
-		<servlet-name>ViewFolderController</servlet-name>
-		<servlet-class>com.controller.ViewFolderController</servlet-class>
-	</servlet>
-	<servlet-mapping>
-		<servlet-name>ViewFolderController</servlet-name>
-		<url-pattern>/ViewFolderController</url-pattern>
-	</servlet-mapping>
-
-	<servlet>
-		<servlet-name>ViewFolderForLocationController</servlet-name>
-		<servlet-class>com.controller.ViewFolderForLocationController</servlet-class>
-	</servlet>
-	<servlet-mapping>
-		<servlet-name>ViewFolderForLocationController</servlet-name>
-		<url-pattern>/ViewFolderForLocationController</url-pattern>
-	</servlet-mapping>
-	
-	<servlet>
-		<servlet-name>NewFileController</servlet-name>
-		<servlet-class>com.controller.NewFileController</servlet-class>
-	</servlet>
-	<servlet-mapping>
-		<servlet-name>NewFileController</servlet-name>
-		<url-pattern>/NewFileController</url-pattern>
-	</servlet-mapping>
-
-	<servlet>
-		<servlet-name>SharedUserListController</servlet-name>
-		<servlet-class>com.controller.SharedUserListController</servlet-class>
-	</servlet>
-	<servlet-mapping>
-		<servlet-name>SharedUserListController</servlet-name>
-		<url-pattern>/SharedUserListController</url-pattern>
-	</servlet-mapping>
+	<listener>
+		<listener-class>com.listener.AppContextListener</listener-class>
+	</listener>
 </web-app>

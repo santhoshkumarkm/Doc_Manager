@@ -32,10 +32,8 @@ public class SignupController extends HttpServlet {
 			File file = new File(defaultLocation + name);
 			file.mkdir();
 			session.setAttribute("user", name);
-			session.setAttribute("loginState", "success");
 			site = "user/owner.jsp";
 		} else {
-			session.setAttribute("loginState", "error");
 			site = "index.jsp";
 		}
 		response.setStatus(response.SC_MOVED_TEMPORARILY);

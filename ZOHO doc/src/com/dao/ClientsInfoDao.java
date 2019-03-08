@@ -192,29 +192,43 @@ public class ClientsInfoDao {
 
 	public static Map<String, String> getSharedFilesForALocation(String location, String user) {
 		int firstIndex = location.indexOf('/');
+		int lastIndex = location.lastIndexOf('/');
 		String ownerName = location.substring(0, firstIndex);
 		String fileLocation = location.substring(firstIndex + 1);
-		Statement stmt = null;
-		ResultSet rs = null;
+		String fileName = location.substring(lastIndex + 1);
+		Statement stmt = null, stmt2 = null;
+		ResultSet rs = null, rs2 = null;
 		HashMap<String, String> map = new HashMap<String, String>();
 		try {
+			stmt2 = con.createStatement();
+			rs2 = stmt2.executeQuery(
+					"select privilege from shared_users_info s, files_info f where f.filelocation = substring('"
+							+ fileLocation + "',1,char_length(filelocation)) and f.filename = '" + fileName
+							+ "' and f.id = s.file_id;");
+			String privilege = "";
+			while (rs2.next()) {
+				privilege = rs2.getString(1);
+			}
 			stmt = con.createStatement();
-			rs = stmt.executeQuery(
-					"select f.ownername,f.filelocation,f.filename, u.privilege from files_info f inner join shared_users_info u on f.id = u.file_id inner join clients_info c on u.user_id = c.id where c.name ='"
-							+ user + "' and f.ownerName = '" + ownerName + "' and f.filelocation = '" + fileLocation
-							+ "'");
+			rs = stmt.executeQuery("select filename from files_info where ownername = '" + ownerName
+					+ "' and filelocation = '" + fileLocation + "'");
 			while (rs.next()) {
-				String result = null;
-				if (rs.getString(2).equals("")) {
-					result = rs.getString(1) + "/" + rs.getString(3);
-				} else {
-					result = rs.getString(1) + "/" + rs.getString(2) + "/" + rs.getString(3);
-				}
-				map.put(result, rs.getString(4));
+				String file = ownerName + "/" + fileLocation + "/" + rs.getString(1);
+				map.put(file, privilege);
 			}
 		} catch (SQLException e) {
 			e.printStackTrace();
 		} finally {
+			try {
+				if (stmt2 != null)
+					stmt2.close();
+			} catch (Exception e) {
+			}
+			try {
+				if (rs2 != null)
+					rs2.close();
+			} catch (Exception e) {
+			}
 			try {
 				if (stmt != null)
 					stmt.close();
@@ -271,7 +285,7 @@ public class ClientsInfoDao {
 		return map;
 	}
 
-	private static long getFileId(String location) {
+	public static long getFileId(String location) {
 		int firstIndex = location.indexOf('/');
 		int lastIndex = location.lastIndexOf('/');
 		String ownerName = location.substring(0, firstIndex);
@@ -443,5 +457,25 @@ public class ClientsInfoDao {
 			}
 		}
 		return userId;
+	}
+
+	public static void removeShare(String sharedUser, String location) {
+		Statement stmt = null;
+		long fileId = 0, userId = 0;
+		try {
+			fileId = getFileId(location);
+			userId = getUserId(sharedUser);
+			stmt = con.createStatement();
+			stmt.executeUpdate(
+					"delete from shared_users_info where file_id = '" + fileId + "' and user_id = '" + userId + "'");
+		} catch (SQLException e) {
+			e.printStackTrace();
+		} finally {
+			try {
+				if (stmt != null)
+					stmt.close();
+			} catch (Exception e) {
+			}
+		}
 	}
 }

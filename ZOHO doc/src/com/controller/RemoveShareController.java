@@ -1,7 +1,5 @@
 package com.controller;
 
-import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 
@@ -16,8 +14,8 @@ import org.json.simple.JSONObject;
 
 import com.dao.ClientsInfoDao;
 
-@WebServlet("/EditFileController")
-public class EditFileController extends HttpServlet {
+@WebServlet("/RemoveShareController")
+public class RemoveShareController extends HttpServlet {
 	private static final long serialVersionUID = 5021L;
 	String defaultLocation;
 
@@ -26,23 +24,14 @@ public class EditFileController extends HttpServlet {
 		defaultLocation = getServletContext().getInitParameter("defaultLocation");
 	}
 
-	protected void doPost(HttpServletRequest request, HttpServletResponse response)
+	protected void doGet(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
-		String fileName = request.getParameter("filename");
-		String text = request.getParameter("text");
-		String location = request.getParameter("location") + "/" + fileName;
 		JSONObject jsonObject = new JSONObject();
 		String successState = "false";
-		File file = new File(defaultLocation + location);
-		if (file.exists()) {
-			file.delete();
-			file.createNewFile();
-			FileWriter fw = new FileWriter(file);
-			fw.write(text);
-			fw.close();
-			ClientsInfoDao.insertFile(location);
-			successState = "true";
-		}
+		String sharedUser = request.getParameter("user");
+		String location = request.getParameter("location");
+		ClientsInfoDao.removeShare(sharedUser, location);
+		successState = "true";
 		jsonObject.put("success", successState);
 		response.setContentType("application/json");
 		PrintWriter out = response.getWriter();

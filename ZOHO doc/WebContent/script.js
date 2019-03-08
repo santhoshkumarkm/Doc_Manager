@@ -49,20 +49,27 @@ function viewFiles(user, privilege="default") {
 	currentDir = user;
 	currentPrivilege = privilege;
 	location.hash = user;
+	
 }
 
 function setOwner(user){
 	owner = user;
-	if(owner == "null"){
-		logout();
-		return;
-	}
-	if(location.hash == ""){
-		viewFiles(user);
-	} else {
-		currentDir = window.location.hash.substring(1);
-	}
-	onHashChange();
+	var xmlhttp = new XMLHttpRequest();
+	xmlhttp.onreadystatechange = function() {
+		if (this.readyState == 4 && this.status == 200) {
+			var successCheck = JSON.parse(this.responseText);
+			if(successCheck.success == "true"){
+				if(location.hash != ""){					
+					onHashChange();
+					viewFiles(location.hash);
+				}
+			} else {
+				logout();
+			}
+		}
+	};
+	xmlhttp.open("GET", "../ValidateController?user=" + owner, true);
+	xmlhttp.send();
 }
 
 function openFolder(file, privilege) {
@@ -73,6 +80,7 @@ function openFolder(file, privilege) {
 		element.preventDefault();
 	    buttonRightClick(event, this.id);
 	});
+	button.setAttribute('type','button');
 	button.setAttribute('class', 'openfolderbutton');
 	button.setAttribute('id', file);
 	if (file.slice(-4) == ".txt") {
@@ -232,11 +240,13 @@ function newFileHandler(){
 	fileName = document.getElementById("filename").value;
 	document.getElementById("displayfilename").innerHTML = fileName+".txt";
 	document.getElementById("editor").style.display = "block";
+	document.getElementById("savebutton").style.display = "inline-block";
+	document.getElementById("editbutton").style.display = "none";
+	document.getElementById("textarea").disabled = false;
 }
 
 function submitFile(){
 	var text = document.getElementById("textarea").value;
-	text = text.replace(/\n/g,"%0D%0A");
 	var xmlhttp = new XMLHttpRequest();
 	fileName = document.getElementById("displayfilename").innerHTML;
 	fileName = fileName.substring(fileName.lastIndexOf('/'), fileName.length);
@@ -247,16 +257,16 @@ function submitFile(){
 				closeEditor();
 				onHashChange();
 			} else {
-				(successCheck.success);
+				alert(successCheck.success);
 			}
 		}
 	};
 	if(document.getElementById("editbutton").style.display == "inline-block"){
-		xmlhttp.open("POST", "../EditFileController?location=" + currentDir + "&filename=" + fileName + "&text=" + text, true);
+		xmlhttp.open("POST", "../NewFileController?location=" + currentDir + "&filename=" + fileName + "&mode=edit", true);
 	} else {		
-		xmlhttp.open("POST", "../NewFileController?location=" + currentDir + "&filename=" + fileName + "&text=" + text, true);
+		xmlhttp.open("POST", "../NewFileController?location=" + currentDir + "&filename=" + fileName + "&mode=new", true);
 	}
-	xmlhttp.send();
+	xmlhttp.send(text);
 }
 
 function openFile(fileName, privilege){
@@ -287,6 +297,7 @@ function openFile(fileName, privilege){
 function editFile(){
 	document.getElementById("textarea").disabled = false;
 	document.getElementById("savebutton").style.display = "inline-block";
+	document.getElementById("editbutton").style.opacity = "0.5";
 }
 
 function shareFile(){
@@ -343,8 +354,12 @@ function shareFileHandler(){
 			}
 		}
 	};
-	xmlhttp.open("POST", "../ShareFileController?location=" + selectedButton + "&privilege=" + getPrivilege, true);
-	xmlhttp.send(opt);
+	if(opt != ""){		
+		xmlhttp.open("POST", "../ShareFileController?location=" + selectedButton + "&privilege=" + getPrivilege, true);
+		xmlhttp.send(opt);
+	} else {
+		alert("No user selected");
+	}
 }
 
 function viewShare(){
@@ -354,7 +369,7 @@ function viewShare(){
 			var parsedJsonObj = JSON.parse(this.responseText);
 			closeButtonForm();
 			if(Object.keys(parsedJsonObj)[0] == "notshared"){
-				alert("Not shared to anyone");
+				alert("No Shared users");
 				return;
 			}
 			document.getElementById("viewFile").innerHTML = selectedButton.substring(selectedButton.lastIndexOf('/')+1);
@@ -372,19 +387,30 @@ function viewShare(){
 			table.appendChild(trHeader);
 			for (x in parsedJsonObj) {
 				var editOption = document.createElement('button');
-				var p = document.createElement('p');
+				var p = document.createElement('span');
 				p.innerHTML = "&#8644;";
 				editOption.appendChild(p);
 				editOption.setAttribute('id',x);
 				editOption.setAttribute('onclick', 'change(this.id)');
-//				editOption.setAttribute('display', 'inline-block');
+				editOption.setAttribute('type','button');
+				editOption.setAttribute('class','editshare');
+				var removeOption = document.createElement('button');
+				var span = document.createElement('span');
+				span.innerHTML = "&#10005;";
+				removeOption.appendChild(span);
+				removeOption.setAttribute('id',x);
+				removeOption.setAttribute('onclick', 'removeShare(this.id)');
+				removeOption.setAttribute('type','button');
+				removeOption.setAttribute('class','removeshare');
 				var tr = document.createElement('tr');
 				var td1 = document.createElement('td');
 				td1.appendChild(document.createTextNode(x));
+				td1.setAttribute('align','center');
 				tr.appendChild(td1);
 				var td2 = document.createElement('td');
 				td2.appendChild(document.createTextNode(parsedJsonObj[x] + " "));
 				td2.appendChild(editOption);
+				td2.appendChild(removeOption);
 				td2.setAttribute('align','right');
 				tr.appendChild(td2);
 				table.appendChild(tr);
@@ -396,6 +422,23 @@ function viewShare(){
 	xmlhttp.send();
 }
 
+function removeShare(sharedUser){
+	var xmlhttp = new XMLHttpRequest();
+	xmlhttp.onreadystatechange = function() {
+		if (this.readyState == 4 && this.status == 200) {
+			var successCheck = JSON.parse(this.responseText);
+			if(successCheck.success == "true"){
+				closeViewShareForm();
+				viewShare();
+			} else {
+					alert(successCheck.success);
+				}
+		}
+	};
+	xmlhttp.open("GET", "../RemoveShareController?user=" + sharedUser +"&location=" + selectedButton, true);
+	xmlhttp.send();
+}
+
 function change(sharedUser){
 	var xmlhttp = new XMLHttpRequest();
 	xmlhttp.onreadystatechange = function() {
@@ -404,10 +447,12 @@ function change(sharedUser){
 			if(successCheck.success == "true"){
 				closeViewShareForm();
 				viewShare();
+			} else {
+				alert(successCheck.success);
 			}
 		}
 	};
-	xmlhttp.open("GET", "../ChangePrivilegeController?user=" + sharedUser +"&location=" + selectedButton, true);
+	xmlhttp.open("POST", "../ChangePrivilegeController?user=" + sharedUser +"&location=" + selectedButton, true);
 	xmlhttp.send();
 }
 
@@ -435,6 +480,9 @@ function onHashChange(){
 				myfolderlist.removeChild(myfolderlist.firstChild);
 			}
 			var parsedJsonObj = JSON.parse(this.responseText);
+			if(parsedJsonObj.success != null){
+				logout();
+			}
 			for (x in parsedJsonObj) {
 				openFolder(x, parsedJsonObj[x]);
 			}
