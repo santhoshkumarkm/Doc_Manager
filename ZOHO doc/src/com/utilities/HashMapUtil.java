@@ -58,19 +58,35 @@ public class HashMapUtil {
 		saveTrie();
 	}
 
-	LinkedHashMap<Integer, ArrayList<Integer>> fileAndPosition = new LinkedHashMap<Integer, ArrayList<Integer>>();
+	LinkedHashMap<Integer, ArrayList<Integer>> fileAndPosition;
+	LinkedHashMap<String, LinkedHashMap<Integer, ArrayList<Integer>>> wordsDeatilMap = new LinkedHashMap<String, LinkedHashMap<Integer, ArrayList<Integer>>>();
 
-	public LinkedHashMap<Integer, ArrayList<Integer>> findWord(String[] words) {
-		if (findMultiWordsImpl(false, words, 0, new ArrayList<Integer>(), new ArrayList<Integer>())) {
-			return (fileAndPosition);
+	public LinkedHashMap<String, LinkedHashMap<Integer, ArrayList<Integer>>> findWord(String[] words) {
+		LinkedList<String> foundWords = trie.searchPrefix(words[words.length - 1]);
+		LinkedHashMap<String, LinkedHashMap<Integer, ArrayList<Integer>>> map = new LinkedHashMap<String, LinkedHashMap<Integer, ArrayList<Integer>>>();
+		String sentence = "";
+		for (int i = 0; i < words.length - 1; i++) {
+			sentence += words[i] + " ";
 		}
-		return null;
+		if (foundWords == null) {
+			return null;
+		}
+		for (String word : foundWords) {
+//			System.out.println("word: " + word);
+			words[words.length - 1] = word;
+			fileAndPosition = new LinkedHashMap<Integer, ArrayList<Integer>>();
+			if (findMultiWordsImpl(false, words, 0, new ArrayList<Integer>(), new ArrayList<Integer>())) {
+				sentence += word;
+				map.put(sentence, fileAndPosition);
+			}
+		}
+		return map;
 	}
 
 	private boolean findMultiWordsImpl(boolean flag, String[] words, int index, ArrayList<Integer> tempPositions,
 			ArrayList<Integer> tempFiles) {
 		WordUtil wordUtil = trie.getWordUtil(words[index]);
-		System.out.println("word util:" + wordUtil);
+//		System.out.println("word util: " + wordUtil);
 		if (wordUtil == null) {
 			return false;
 		}
@@ -108,20 +124,19 @@ public class HashMapUtil {
 		return flag;
 	}
 
-	public void removeWords(String filePath, LinkedHashMap<Integer, String> words) {
-		long fileId = ClientsInfoDao.getFileId(filePath);
-		System.out.println(fileId);
+	public void removeWords(long fileId, LinkedHashMap<Integer, String> words) {
 		for (Map.Entry<Integer, String> entry : words.entrySet()) {
-			trie.remove(entry.getValue(), (int) fileId, entry.getKey());
+			System.out.println(trie.remove(entry.getValue(), (int) fileId, entry.getKey()));
 		}
+		saveTrie();
 	}
 
-	public void editWords(String filePath, LinkedHashMap<Integer, String> words) {
-		long fileId = ClientsInfoDao.getFileId(filePath);
+	public void editWords(long fileId, LinkedHashMap<Integer, String> words) {
 		System.out.println(fileId);
 		for (Map.Entry<Integer, String> entry : words.entrySet()) {
 			addHashMapEntry(entry.getKey(), entry.getValue(), (int) fileId);
 		}
+		saveTrie();
 	}
 
 	private void saveTrie() {

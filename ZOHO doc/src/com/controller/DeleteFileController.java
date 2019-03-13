@@ -1,8 +1,11 @@
 package com.controller;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.LinkedHashMap;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
@@ -14,6 +17,8 @@ import javax.servlet.http.HttpServletResponse;
 import org.json.simple.JSONObject;
 
 import com.dao.ClientsInfoDao;
+import com.utilities.AddWordsTask;
+import com.utilities.Utilities;
 
 @WebServlet("/DeleteFileController")
 public class DeleteFileController extends HttpServlet {
@@ -32,7 +37,9 @@ public class DeleteFileController extends HttpServlet {
 		JSONObject jsonObject = new JSONObject();
 		String successState = "false";
 		if (file.exists()) {
-			file.delete();
+			LinkedHashMap<Integer, String>[] twoLists = Utilities
+					.getEditedWords(Utilities.stringBuilder(new BufferedReader(new FileReader(file))), "");
+			AddWordsTask.getEditList().addFileName(ClientsInfoDao.getFileId(location)+"+"+location, twoLists);
 			ClientsInfoDao.deleteFile(location);
 			successState = "true";
 		}

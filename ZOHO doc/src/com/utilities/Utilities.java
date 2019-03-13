@@ -8,6 +8,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.util.LinkedHashMap;
 
 public class Utilities {
 	private static FileInputStream fin;
@@ -81,5 +82,33 @@ public class Utilities {
 				}
 
 		}
+	}
+
+	public static LinkedHashMap<Integer, String>[] getEditedWords(String prevFile, String text) {
+		LinkedHashMap<Integer, String> prevList = new LinkedHashMap<Integer, String>();
+		LinkedHashMap<Integer, String> updatedList = new LinkedHashMap<Integer, String>();
+		LinkedHashMap<Integer, String>[] twoLists = new LinkedHashMap[2];
+		String[] prev = prevFile.split("\\W+");
+		String[] updated = text.split("\\W+");
+		int count = 0;
+		for (count = 0; count < updated.length; count++) {
+			if (prev[count] != null && !updated[count].equals(prev[count])) {
+				prevList.put(count, prev[count]);
+				updatedList.put(count, updated[count]);
+			} else {
+				updatedList.put(count, updated[count]);
+			}
+		}
+		if (updated.length != 0) {
+			count--;
+			updatedList = null;
+		}
+		while (count < prev.length) {
+			prevList.put(count, prev[count]);
+			count++;
+		}
+		twoLists[0] = prevList;
+		twoLists[1] = updatedList;
+		return twoLists;
 	}
 }

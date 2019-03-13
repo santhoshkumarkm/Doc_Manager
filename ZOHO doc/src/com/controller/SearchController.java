@@ -1,13 +1,10 @@
 package com.controller;
 
 import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -41,27 +38,19 @@ public class SearchController extends HttpServlet {
 		String user = (String) session.getAttribute("user");
 		BufferedReader reader = new BufferedReader(new InputStreamReader(request.getInputStream()));
 		JSONObject jsonObject = new JSONObject();
-		String successState = "true";
 		String words = Utilities.stringBuilder(reader);
-		System.out.println("words: " + words);
-		LinkedHashMap<Integer, ArrayList<Integer>> wordDetailMap = new HashMapUtil().findWord(words.split("\\W+"));
-		System.out.println("word detail: " + wordDetailMap);
-		if (wordDetailMap != null) {
-			LinkedHashMap<String, Integer> checkedMap = ClientsInfoDao.search(wordDetailMap, user);
-			if (checkedMap.size() > 0) {
-				for (Map.Entry<String, Integer> entry : checkedMap.entrySet()) {
-					jsonObject.put(entry.getKey(), entry.getValue());
-				}
-			} else {
-				successState = "false";
+//		System.out.println("words: " + words);
+		LinkedHashMap<String, LinkedHashMap<Integer, ArrayList<Integer>>> wordsDetailMap = new HashMapUtil()
+				.findWord(words.split("\\W+"));
+//		System.out.println("word detail: " + wordsDetailMap);
+		if (wordsDetailMap != null) {
+			for (Map.Entry<String, LinkedHashMap<Integer, ArrayList<Integer>>> entry : wordsDetailMap.entrySet()) {
+				jsonObject.put(entry.getKey(), ClientsInfoDao.search(entry.getValue(), user));
+//				System.out.println(jsonObject);
 			}
-		} else {
-			successState = "false";
 		}
-		jsonObject.put("success", successState);
 		response.setContentType("application/json");
 		PrintWriter out = response.getWriter();
-		System.out.println(jsonObject);
 		out.print(jsonObject);
 		out.flush();
 	}

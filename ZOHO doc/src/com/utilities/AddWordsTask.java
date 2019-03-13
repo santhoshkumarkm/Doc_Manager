@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.TimerTask;
@@ -42,11 +43,19 @@ public class AddWordsTask extends TimerTask {
 			try {
 				for (Map.Entry<String, LinkedHashMap<Integer, String>[]> entry : editList.getFileNames().entrySet()) {
 					filePath = entry.getKey();
+//					System.out.println("file path: " + filePath);
 					LinkedHashMap<Integer, String>[] twoLists = entry.getValue();
-					fileContent = Utilities.stringBuilder(new BufferedReader(new FileReader(new File(
-							"/Users/santhosh-pt2425/Documents/Cloud_Storage_Application/Clients/" + filePath))));
-					hashMapUtil.removeWords(filePath, twoLists[0]);
-					hashMapUtil.editWords(filePath, twoLists[1]);
+					File currentFile = new File("/Users/santhosh-pt2425/Documents/Cloud_Storage_Application/Clients/"
+							+ filePath.substring(filePath.indexOf('+') + 1));
+					fileContent = Utilities.stringBuilder(new BufferedReader(new FileReader(currentFile)));
+					hashMapUtil.removeWords(Long.valueOf(filePath.substring(0, filePath.indexOf('+'))), twoLists[0]);
+//					System.out.println(twoLists[1]);
+					if (twoLists[1] != null) {
+						hashMapUtil.editWords(Long.valueOf(filePath.substring(0, filePath.indexOf('+'))), twoLists[1]);
+					} else {
+						currentFile.delete();
+					}
+					editList.getFileNames().remove(filePath);
 					Utilities.writeFile(editFile, editList);
 				}
 			} catch (FileNotFoundException e) {

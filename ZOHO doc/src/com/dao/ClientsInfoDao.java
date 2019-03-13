@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
 
 public class ClientsInfoDao {
 	static Connection con;
@@ -484,29 +485,31 @@ public class ClientsInfoDao {
 		}
 	}
 
-	public static LinkedHashMap<String, Integer> search(LinkedHashMap<Integer, ArrayList<Integer>> wordDetailMap,
-			String user) {
-		LinkedHashMap<String, Integer> result = new LinkedHashMap<String, Integer>();
+	public static JSONObject search(LinkedHashMap<Integer, ArrayList<Integer>> wordDetailMap, String user) {
+		JSONObject jsonObject = new JSONObject();
 		for (Map.Entry<Integer, ArrayList<Integer>> entry : wordDetailMap.entrySet()) {
-			System.out.println(entry.getKey() + user);
+//			System.out.println("file id: " + entry.getKey() + " user: " + user);
 			String fileLocation = check(entry.getKey(), user);
 			if (fileLocation != null) {
-				result.put(fileLocation, entry.getValue().size());
+				jsonObject.put(fileLocation, entry.getValue().size());
 			}
 		}
 
-		List<Map.Entry<String, Integer>> list = new LinkedList<Map.Entry<String, Integer>>(result.entrySet());
+		if (jsonObject.size() == 0) {
+			return jsonObject;
+		}
+
+		List<Map.Entry<String, Integer>> list = new LinkedList<Map.Entry<String, Integer>>(jsonObject.entrySet());
 		Collections.sort(list, new Comparator<Map.Entry<String, Integer>>() {
 			public int compare(Map.Entry<String, Integer> o1, Map.Entry<String, Integer> o2) {
 				return (o1.getValue()).compareTo(o2.getValue());
 			}
 		});
-		result.clear();
+		jsonObject.clear();
 		for (Map.Entry<String, Integer> aa : list) {
-			result.put(aa.getKey(), aa.getValue());
+			jsonObject.put(aa.getKey(), aa.getValue());
 		}
-		System.out.println(result);
-		return result;
+		return jsonObject;
 	}
 
 	private static String check(long fileId, String user) {

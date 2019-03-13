@@ -47,7 +47,7 @@ public class Trie implements Serializable {
 		trieNode.wordDetail = wordDetail;
 	}
 
-	public LinkedList<WordDetailPair> searchPrefix(String key) {
+	public LinkedList<String> searchPrefix(String key) {
 		int length = key.length();
 		Character letter;
 		TrieNode trieNode = root;
@@ -60,29 +60,29 @@ public class Trie implements Serializable {
 		if (trieNode == null) {
 			return null;
 		}
-		LinkedList<WordDetailPair> pairs = new LinkedList<WordDetailPair>();
+		LinkedList<String> pairs = new LinkedList<String>();
 		if (trieNode.wordDetail != null) {
-			pairs.add(new WordDetailPair(key, trieNode.wordDetail));
+			pairs.add(key);
 			return pairs;
 		}
 		for (int i = 0; i < trieNode.charArray.size(); i++) {
-			pairs = getSuggestions(new LinkedList<WordDetailPair>(), key, trieNode);
+			pairs = getSuggestions(new LinkedList<String>(), key, trieNode);
 		}
 		return pairs;
 	}
 
-	private LinkedList<WordDetailPair> getSuggestions(LinkedList<WordDetailPair> pairs, String word,
-			TrieNode trieNode) {
+	private LinkedList<String> getSuggestions(LinkedList<String> pairs, String word, TrieNode trieNode) {
 		if (trieNode == null) {
 			return null;
 		}
 		if (trieNode.wordDetail != null) {
-			pairs.add(new WordDetailPair(word, trieNode.wordDetail));
+			pairs.add(word);
 
 		}
 		for (int i = 0; i < trieNode.charArray.size(); i++) {
 			word += trieNode.charArray.get(i);
 			pairs = getSuggestions(pairs, word, trieNode.nodeArray.get(i));
+			word = word.substring(0, word.length() - 1);
 		}
 		return pairs;
 	}
@@ -117,10 +117,8 @@ public class Trie implements Serializable {
 		LinkedList<Integer> positions2 = new LinkedList<Integer>();
 		positions2.add(1);
 		positions2.add(2);
-		positions2.add(9);
-		positions2.add(14);
 		Map<Integer, LinkedList<Integer>> infoMap2 = new LinkedHashMap<Integer, LinkedList<Integer>>();
-		infoMap2.put(3, positions2);
+		infoMap2.put(1, positions2);
 		WordUtil wordUtil2 = new WordUtil();
 		wordUtil2.setInfoMap(infoMap2);
 
@@ -134,12 +132,13 @@ public class Trie implements Serializable {
 		WordUtil wordUtil3 = new WordUtil();
 		wordUtil3.setInfoMap(infoMap3);
 
-		trie.insert("word1", wordUtil);
-		trie.insert("new2", wordUtil2);
+		trie.insert("new", wordUtil2);
+		trie.insert("creationwfd", wordUtil);
 		trie.insert("wordrd1", wordUtil3);
-		trie.insert("word111", wordUtil2);
-		trie.remove("word1", 1, 2);
-		System.out.println(trie.searchPrefix("new"));
+		trie.insert("word111", wordUtil3);
+		trie.remove("new", 1, 1);
+		trie.remove("new", 1, 2);
+		System.out.println(trie.getWordUtil("new"));
 	}
 
 	public WordUtil getWordUtil(String key) {
@@ -159,6 +158,7 @@ public class Trie implements Serializable {
 	}
 
 	public boolean remove(String key, int fileId, int position) {
+		System.out.println("remove: " + key + fileId + position);
 		int length = key.length();
 		Character letter;
 		TrieNode trieNode = root;

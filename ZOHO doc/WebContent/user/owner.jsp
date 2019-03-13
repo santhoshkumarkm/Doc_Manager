@@ -42,7 +42,7 @@
 		</div>
 		<div style="float: right; margin: 10px;">
 			<form class="search" style="max-width: 300px">
-				<input type="text" id="searchText" placeholder="Min 3 letters..." onkeypress="onKeyPress()">
+				<input type="text" id="searchText" placeholder="Min 3 letters..." onkeyup="onKeyPress()">
 				<button type="button" onclick="onKeyPress()"
 					style="display: inline; color: white; background-color: black; padding: 2px 5px 2px 5px; font-family: sans-serif;">Search</button>
 			</form>
