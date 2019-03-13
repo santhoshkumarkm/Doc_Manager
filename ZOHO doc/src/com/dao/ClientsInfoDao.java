@@ -6,9 +6,14 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 
 import org.json.simple.JSONArray;
@@ -190,7 +195,7 @@ public class ClientsInfoDao {
 		return userListArray;
 	}
 
-	public static Map<String, String> getSharedFilesForALocation(String location, String user) {
+	public static Map<String, String> getSharedFilesForALocation(String location) {
 		int firstIndex = location.indexOf('/');
 		int lastIndex = location.lastIndexOf('/');
 		String ownerName = location.substring(0, firstIndex);
@@ -477,5 +482,104 @@ public class ClientsInfoDao {
 			} catch (Exception e) {
 			}
 		}
+	}
+
+	public static LinkedHashMap<String, Integer> search(LinkedHashMap<Integer, ArrayList<Integer>> wordDetailMap,
+			String user) {
+		LinkedHashMap<String, Integer> result = new LinkedHashMap<String, Integer>();
+		for (Map.Entry<Integer, ArrayList<Integer>> entry : wordDetailMap.entrySet()) {
+			System.out.println(entry.getKey() + user);
+			String fileLocation = check(entry.getKey(), user);
+			if (fileLocation != null) {
+				result.put(fileLocation, entry.getValue().size());
+			}
+		}
+
+		List<Map.Entry<String, Integer>> list = new LinkedList<Map.Entry<String, Integer>>(result.entrySet());
+		Collections.sort(list, new Comparator<Map.Entry<String, Integer>>() {
+			public int compare(Map.Entry<String, Integer> o1, Map.Entry<String, Integer> o2) {
+				return (o1.getValue()).compareTo(o2.getValue());
+			}
+		});
+		result.clear();
+		for (Map.Entry<String, Integer> aa : list) {
+			result.put(aa.getKey(), aa.getValue());
+		}
+		System.out.println(result);
+		return result;
+	}
+
+	private static String check(long fileId, String user) {
+		Statement stmt = null, stmt2 = null, stmt1 = null;
+		ResultSet rs = null, rs2 = null, rs1 = null;
+		String ownerName = null, fileLocation = null;
+		try {
+			stmt = con.createStatement();
+			rs = stmt.executeQuery("select ownername, filelocation, filename from files_info where id = '" + fileId
+					+ "' and ownername = '" + user + "'");
+			while (rs.next()) {
+				if (rs.getString(2).equals("")) {
+					return rs.getString(1) + "/" + rs.getString(3);
+				} else {
+					return rs.getString(1) + "/" + rs.getString(2) + "/" + rs.getString(3);
+				}
+			}
+
+			stmt1 = con.createStatement();
+			rs1 = stmt1.executeQuery(
+					"select ownername, filelocation, filename from files_info where id = '" + fileId + "'");
+			while (rs1.next()) {
+				ownerName = rs1.getString(1);
+				if (rs1.getString(2).equals("")) {
+					fileLocation = rs1.getString(3);
+				} else {
+					fileLocation = rs1.getString(2) + "/" + rs1.getString(3);
+				}
+			}
+
+			stmt2 = con.createStatement();
+			rs2 = stmt2.executeQuery("select privilege from shared_users_info s, files_info f where s.user_id = '"
+					+ getUserId(user) + "'  and f.id = s.file_id and concat(f.filelocation,f.filename) = substring('"
+					+ fileLocation + "',1,char_length(concat(f.filelocation,f.filename)))");
+			while (rs2.next()) {
+				if (rs2.getString(1) != null) {
+					return ownerName + "/" + fileLocation;
+				}
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		} finally {
+			try {
+				if (stmt2 != null)
+					stmt2.close();
+			} catch (Exception e) {
+			}
+			try {
+				if (rs2 != null)
+					rs2.close();
+			} catch (Exception e) {
+			}
+			try {
+				if (stmt1 != null)
+					stmt1.close();
+			} catch (Exception e) {
+			}
+			try {
+				if (rs1 != null)
+					rs1.close();
+			} catch (Exception e) {
+			}
+			try {
+				if (stmt != null)
+					stmt.close();
+			} catch (Exception e) {
+			}
+			try {
+				if (rs != null)
+					rs.close();
+			} catch (Exception e) {
+			}
+		}
+		return null;
 	}
 }

@@ -49,11 +49,11 @@ function viewFiles(user, privilege="default") {
 	currentDir = user;
 	currentPrivilege = privilege;
 	location.hash = user;
-	
 }
 
 function setOwner(user){
 	owner = user;
+	currentDir = user;
 	var xmlhttp = new XMLHttpRequest();
 	xmlhttp.onreadystatechange = function() {
 		if (this.readyState == 4 && this.status == 200) {
@@ -61,7 +61,7 @@ function setOwner(user){
 			if(successCheck.success == "true"){
 				if(location.hash != ""){					
 					onHashChange();
-					viewFiles(location.hash);
+					viewFiles(location.hash.substring(1));
 				}
 			} else {
 				logout();
@@ -148,7 +148,7 @@ function buttonRightClick(event, id){
 }
 
 function windowRightClick(event){
-	if(event.target.nodeName=="DIV" && (currentPrivilege=="write" || currentDir.startsWith(owner))){
+	if(event.target.nodeName=="DIV" && currentPrivilege!="read"){
 		document.getElementById("containerForm").style.display = "block";
 		document.getElementById("containerForm").style.left = event.clientX  + "px";
 		document.getElementById("containerForm").style.top = event.clientY  + "px";
@@ -187,6 +187,10 @@ function closeShareFileForm(){
 
 function closeViewShareForm(){
 	document.getElementById("viewShareForm").style.display = "none";
+}
+
+function closeSearchMenu(){
+	document.getElementById("searchmenu").style.display = "none";
 }
 
 function deleteFile(){
@@ -456,6 +460,71 @@ function change(sharedUser){
 	xmlhttp.send();
 }
 
+function onKeyPress(){
+	var text = document.getElementById("searchText");
+	if(text.value.length >= 3){
+		var xmlhttp = new XMLHttpRequest();
+		xmlhttp.onreadystatechange = function() {
+			if (this.readyState == 4 && this.status == 200) {
+				var successCheck = JSON.parse(this.responseText);
+				if(successCheck.success != "false"){
+					showFoundFiles(successCheck);
+				}
+			}
+		};
+		xmlhttp.open("POST", "../SearchController?", true);
+		xmlhttp.send(text.value);
+	}
+}
+
+function showFoundFiles(successCheck){
+	var searchMenu = document.getElementById("searchmenu");
+	searchMenu.style.display = "block";
+	var searchResult = document.getElementById("searchresult");
+	while (searchResult.firstChild) {
+		searchResult.removeChild(searchResult.firstChild);
+	}
+	for (x in successCheck) {
+		fileList(x, successCheck[x]);
+	}
+	var br = document.createElement('br');
+	document.getElementById("searchresult").appendChild(br);
+}
+
+function fileList(filePath, count){
+	if(filePath=="success"){
+		return;
+	}
+	var br = document.createElement('br');
+	document.getElementById("searchresult").appendChild(br);
+	var item = document.createElement('li');
+	var button = document.createElement('div');
+	button.setAttribute('id', filePath);
+	var fileImg = document.createElement('img');
+	fileImg.setAttribute('src', '../images/file.png');
+	fileImg.setAttribute('alt', 'File Image');
+	fileImg.setAttribute('width', '25px');
+	fileImg.setAttribute('height', '25px');
+	button.appendChild(fileImg);
+	var btnText;
+	if(filePath.indexOf('/') != -1){
+		btnText = filePath.substring(filePath.lastIndexOf('/')+1);
+	} else {
+		btnText = filePath;
+	}
+	button.appendChild(document.createTextNode(" " + btnText + " "+ count));
+	item.appendChild(button);
+	var fileButton = document.createElement('button');
+	fileButton.setAttribute('class', 'editshare');
+//	fileButton.setAttribute('onclick',''
+	fileButton.appendChild(document.createTextNode("open"));
+	item.appendChild(fileButton);
+	var folderButton = document.createElement('button');
+	folderButton.setAttribute('class', 'removeshare');
+	folderButton.appendChild(document.createTextNode("open location"));
+	item.appendChild(folderButton);
+	document.getElementById("searchresult").appendChild(item);
+}
 function logout(){
 	var xmlhttp = new XMLHttpRequest();
 	xmlhttp.onreadystatechange = function() {

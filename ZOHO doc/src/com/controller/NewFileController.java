@@ -2,10 +2,12 @@ package com.controller;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
+import java.util.LinkedHashMap;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
@@ -47,9 +49,11 @@ public class NewFileController extends HttpServlet {
 			fw.close();
 			ClientsInfoDao.insertFile(location);
 			successState = "true";
-			AddWordsTask.getFileList().addFileName(location, "new");
+			AddWordsTask.getFileList().addFileName(location);
 		} else if (file.exists() && mode.equals("edit")) {
-			AddWordsTask.getFileList().addFileName(location, "edit");
+			LinkedHashMap<Integer, String>[] twoLists = getEditedWords(
+					Utilities.stringBuilder(new BufferedReader(new FileReader(file))), text);
+			AddWordsTask.getEditList().addFileName(location, twoLists);
 			file.delete();
 			file.createNewFile();
 			FileWriter fw = new FileWriter(file);
@@ -63,5 +67,30 @@ public class NewFileController extends HttpServlet {
 		PrintWriter out = response.getWriter();
 		out.print(jsonObject);
 		out.flush();
+	}
+
+	private LinkedHashMap<Integer, String>[] getEditedWords(String prevFile, String text) {
+		LinkedHashMap<Integer, String> prevList = new LinkedHashMap<Integer, String>();
+		LinkedHashMap<Integer, String> updatedList = new LinkedHashMap<Integer, String>();
+		LinkedHashMap<Integer, String>[] twoLists = new LinkedHashMap[2];
+		String[] prev = prevFile.split("\\W+");
+		String[] updated = text.split("\\W+");
+		int count = 0;
+		for (count = 0; count < updated.length; count++) {
+			if (prev[count] != null && !updated[count].equals(prev[count])) {
+				prevList.put(count, prev[count]);
+				updatedList.put(count, updated[count]);
+			} else {
+				updatedList.put(count, updated[count]);
+			}
+		}
+		count--;
+		while (count < prev.length) {
+			prevList.put(count, prev[count]);
+			count++;
+		}
+			twoLists[0] = prevList;
+		twoLists[1] = updatedList;
+		return twoLists;
 	}
 }

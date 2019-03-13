@@ -1,10 +1,8 @@
 package com.utilities;
 
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.Map;
@@ -12,23 +10,19 @@ import java.util.Map;
 import com.dao.ClientsInfoDao;
 
 public class HashMapUtil {
-	HashMapObject hashMapSavedObject;
-	LinkedHashMap<String, WordUtil> hashMap;
-	File hashMapFile;
-	String filePath, fileContent;
+	File trieFile;
+	Trie trie;
 
 	public HashMapUtil() {
-		hashMapFile = new File("/Users/santhosh-pt2425/Documents/Cloud_Storage_Application/Clients/HashMap.txt");
-		if (hashMapFile.exists()) {
+		trieFile = new File("/Users/santhosh-pt2425/Documents/Cloud_Storage_Application/Clients/TrieFile.txt");
+		if (trieFile.exists()) {
 			try {
-				hashMapSavedObject = (HashMapObject) Utilities.readFile(hashMapFile);
-				hashMap = hashMapSavedObject.getHashMap();
+				trie = (Trie) Utilities.readFile(trieFile);
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
 		} else {
-			hashMapSavedObject = new HashMapObject();
-			hashMap = new LinkedHashMap<String, WordUtil>();
+			trie = new Trie();
 		}
 	}
 
@@ -36,15 +30,13 @@ public class HashMapUtil {
 		long fileId = ClientsInfoDao.getFileId(filePath);
 		String[] words = fileContent.split("\\W+");
 		for (int i = 0; i < words.length; i++) {
-			addHashMapEntry(i, words[i].replace(".", "").trim(), (int) fileId);
+			addHashMapEntry(i, words[i].trim(), (int) fileId);
 		}
 	}
 
 	private void addHashMapEntry(int position, String word, int fileId) {
-		System.out.println(word);
-		WordUtil wordUtil = new WordUtil();
-		if (hashMap.containsKey(word)) {
-			wordUtil = hashMap.get(word);
+		WordUtil wordUtil;
+		if ((wordUtil = trie.getWordUtil(word)) != null) {
 			for (int i = 0; i < wordUtil.getInfoMap().size(); i++) {
 				if (wordUtil.getInfoMap().containsKey(fileId)) {
 					if (!wordUtil.getInfoMap().get(fileId).contains(position)) {
@@ -57,12 +49,13 @@ public class HashMapUtil {
 				}
 			}
 		} else {
+			wordUtil = new WordUtil();
 			LinkedList<Integer> list = new LinkedList<Integer>();
 			list.add(position);
 			wordUtil.getInfoMap().put(fileId, list);
 		}
-		hashMap.put(word, wordUtil);
-		saveHashMap();
+		trie.insert(word, wordUtil);
+		saveTrie();
 	}
 
 	LinkedHashMap<Integer, ArrayList<Integer>> fileAndPosition = new LinkedHashMap<Integer, ArrayList<Integer>>();
@@ -76,7 +69,8 @@ public class HashMapUtil {
 
 	private boolean findMultiWordsImpl(boolean flag, String[] words, int index, ArrayList<Integer> tempPositions,
 			ArrayList<Integer> tempFiles) {
-		WordUtil wordUtil = hashMap.get(words[index]);
+		WordUtil wordUtil = trie.getWordUtil(words[index]);
+		System.out.println("word util:" + wordUtil);
 		if (wordUtil == null) {
 			return false;
 		}
@@ -114,21 +108,24 @@ public class HashMapUtil {
 		return flag;
 	}
 
-	private void saveHashMap() {
-		hashMapSavedObject.setHashMap(hashMap);
-		Utilities.writeFile(hashMapFile, hashMapSavedObject);
-	}
-
-	public void editWords(String filePath, String fileContent) {
+	public void removeWords(String filePath, LinkedHashMap<Integer, String> words) {
 		long fileId = ClientsInfoDao.getFileId(filePath);
 		System.out.println(fileId);
-		String[] curWords = fileContent.split("\\W+");
-		removeAllForFileId(fileId);
-		addWords(filePath, fileContent);
+		for (Map.Entry<Integer, String> entry : words.entrySet()) {
+			trie.remove(entry.getValue(), (int) fileId, entry.getKey());
+		}
 	}
 
-	private void removeAllForFileId(long fileId) {
-		
+	public void editWords(String filePath, LinkedHashMap<Integer, String> words) {
+		long fileId = ClientsInfoDao.getFileId(filePath);
+		System.out.println(fileId);
+		for (Map.Entry<Integer, String> entry : words.entrySet()) {
+			addHashMapEntry(entry.getKey(), entry.getValue(), (int) fileId);
+		}
+	}
+
+	private void saveTrie() {
+		Utilities.writeFile(trieFile, trie);
 	}
 
 }

@@ -15,6 +15,8 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.json.simple.JSONObject;
 
+import com.utilities.Utilities;
+
 @WebServlet("/OpenFileController")
 public class OpenFileController extends HttpServlet {
 	private static final long serialVersionUID = 5021L;
@@ -32,7 +34,7 @@ public class OpenFileController extends HttpServlet {
 		String successState = "false", content="";
 		File file = new File(defaultLocation + fileName);
 		if (file.exists()) {
-			content= stringBuilder(new BufferedReader(new FileReader(file)));
+			content= Utilities.stringBuilder(new BufferedReader(new FileReader(file)));
 			successState = "true";
 		}
 		jsonObject.put("success", successState);
@@ -41,18 +43,5 @@ public class OpenFileController extends HttpServlet {
 		PrintWriter out = response.getWriter();
 		out.print(jsonObject);
 		out.flush();
-	}
-	
-	private static String stringBuilder(BufferedReader bin) {
-		StringBuilder stringBuilder = new StringBuilder();
-		String s = "";
-		try {
-			while ((s = bin.readLine()) != null) {
-				stringBuilder.append(s + "\n");
-			}
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		return stringBuilder.toString();
 	}
 }

@@ -37,9 +37,8 @@ public class ViewFolderForLocationController extends HttpServlet {
 		if (location.startsWith(userName)) {
 			crunchifyMap = ClientsInfoDao.getRootUserFiles(location);
 			session.setAttribute("privilege", "default");
-			System.out.println("privilege set at for location in root user");
 		} else {
-			crunchifyMap = ClientsInfoDao.getSharedFilesForALocation(location, userName);
+			crunchifyMap = ClientsInfoDao.getSharedFilesForALocation(location);
 			if (crunchifyMap.containsValue("read")) {
 				session.setAttribute("privilege", "read");
 			} else {

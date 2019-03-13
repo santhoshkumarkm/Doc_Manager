@@ -1,19 +1,20 @@
 package com.utilities;
 
 import java.io.Serializable;
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 public class FileList implements Serializable {
-	private static final long serialVersionUID = 100003L;
+	private static final long serialVersionUID = 10044003L;
 
-	Map<String,String> fileNames = new LinkedHashMap<String,String>();
+	Set<String> fileNames = new LinkedHashSet<String>();
 
-	public void addFileName(String name , String mode) {
-		fileNames.put(name, mode);
+	public void addFileName(String name) {
+		fileNames.add(name);
 	}
 
-	public Map<String, String> getFileNames() {
+	public Set<String> getFileNames() {
 		return fileNames;
 	}
+
 }

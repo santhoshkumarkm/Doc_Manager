@@ -62,7 +62,8 @@
 	background-color: #D7DBDD;
 	padding: 0px 10px 0px 10px;
 	width: 40px;
-	height: 28px; float : left;
+	height: 28px;
+	float: left;
 	font-family: sans-serif;
 	color: black;
 	bottom: 0;
@@ -182,4 +183,17 @@ td {
 .editshare {
 	background-color: yellow;
 	height: 23px;
+}
+
+.searchmenu {
+	overflow: auto;
+	background-color: white;
+	position: fixed;
+	top: 165px;
+	right: 0px;
+	width: 30%;
+	height: 145px;
+	z-index: 2;
+	border: 3px solid black;
+	display: none;
 }
