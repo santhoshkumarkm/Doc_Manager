@@ -10,6 +10,7 @@ import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 
 import org.json.simple.JSONObject;
 
@@ -27,12 +28,25 @@ public class NewFolderController extends HttpServlet {
 
 	protected void doGet(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
+		HttpSession session = request.getSession();
+		String sessionUser = (String) session.getAttribute("user");
 		String folderName = request.getParameter("foldername");
 		String location = request.getParameter("location") + "/" + folderName;
 		JSONObject jsonObject = new JSONObject();
-		String successState = "false";
+		String successState = "ERROR";
 		File file = new File(defaultLocation + location);
-		if (!file.exists()) {			
+		boolean flag = false;
+		String checkLocation = location.substring(0, location.indexOf('/'));
+		if (checkLocation.equals(sessionUser)) {
+			flag = true;
+		} else {
+				long fileId = ClientsInfoDao.getFileId(request.getParameter("location"));
+				String privilegeInfo = ClientsInfoDao.checkLocation(fileId, sessionUser);
+				if (privilegeInfo.substring(0, privilegeInfo.indexOf('+')).equals("write")) {
+					flag = true;
+				}
+		}
+		if (flag && !file.exists()) {			
 			file.mkdir();
 			ClientsInfoDao.insertFile(location);
 			successState = "true";

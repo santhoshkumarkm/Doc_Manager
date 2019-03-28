@@ -6,6 +6,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.LinkedHashMap;
+import java.util.LinkedList;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
@@ -13,6 +14,7 @@ import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 
 import org.json.simple.JSONObject;
 
@@ -32,22 +34,54 @@ public class DeleteFileController extends HttpServlet {
 
 	protected void doGet(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
+		HttpSession session = request.getSession();
+		String sessionUser = (String) session.getAttribute("user");
 		String location = request.getParameter("location");
 		File file = new File(defaultLocation + "/" + location);
 		JSONObject jsonObject = new JSONObject();
-		String successState = "false";
-		if (file.exists()) {
-			LinkedHashMap<Integer, String>[] twoLists = Utilities
-					.getEditedWords(Utilities.stringBuilder(new BufferedReader(new FileReader(file))), "");
-			AddWordsTask.getEditList().addFileName(ClientsInfoDao.getFileId(location)+"+"+location, twoLists);
-			ClientsInfoDao.deleteFile(location);
-			successState = "true";
+		String successState = "ERROR";
+		if (location.startsWith(sessionUser) && file.exists()) {
+			if (location.endsWith(".txt")) {
+				LinkedHashMap<Integer, String>[] twoLists = Utilities
+						.getEditedWords(Utilities.stringBuilder(new BufferedReader(new FileReader(file))), "");
+				AddWordsTask.getEditList().addFileName(ClientsInfoDao.getFileId(location) + "+" + location, twoLists);
+				ClientsInfoDao.deleteFile(location);
+				successState = "true";
+			} else {
+				LinkedList<String> fileNames = ClientsInfoDao.getFilesInDirectory(location);
+//				System.out.println("file names: " + fileNames);
+				int i=0;
+				for (String filePath : fileNames) {
+					File subFile = new File(defaultLocation + "/" + filePath);
+//					System.out.println("file: " + subFile);
+					LinkedHashMap<Integer, String>[] twoLists = Utilities
+							.getEditedWords(Utilities.stringBuilder(new BufferedReader(new FileReader(subFile))), "");
+					AddWordsTask.getEditList().addFileName(ClientsInfoDao.getFileId(filePath) + "+" + location,
+							twoLists);
+				}
+				ClientsInfoDao.deleteFile(location);
+//				System.out.println("file: " + file);
+				successState = "true";
+			}
+			recursiveDelete(file);
 		}
 		jsonObject.put("success", successState);
 		response.setContentType("application/json");
 		PrintWriter out = response.getWriter();
 		out.print(jsonObject);
 		out.flush();
+	}
+
+	public static void recursiveDelete(File file) {
+		if (!file.exists())
+			return;
+
+		if (file.isDirectory()) {
+			for (File f : file.listFiles()) {
+				recursiveDelete(f);
+			}
+		}
+		file.delete();
 	}
 
 }

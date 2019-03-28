@@ -15,6 +15,8 @@ import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
 
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -272,7 +274,7 @@ public class ClientsInfoDao {
 				} else {
 					result = rs.getString(1) + "/" + rs.getString(2) + "/" + rs.getString(3);
 				}
-				map.put(result, "default");
+				map.put(result, "owner");
 			}
 		} catch (SQLException e) {
 			e.printStackTrace();
@@ -288,6 +290,7 @@ public class ClientsInfoDao {
 			} catch (Exception e) {
 			}
 		}
+//		System.out.println("MAP: " + map);
 		return map;
 	}
 
@@ -324,17 +327,26 @@ public class ClientsInfoDao {
 		return fileId;
 	}
 
-	public static void shareFile(String user, String location, String privilege) {
+	public static JSONObject shareFile(String user, String location, String privilege) {
 		PreparedStatement prepStmt = null;
 		Statement stmt2 = null;
 		ResultSet rs2 = null;
 		long userId = 0, fileId = 0;
+		JSONObject jsonObject = new JSONObject();
 		try {
 			fileId = getFileId(location);
 			stmt2 = con.createStatement();
 			rs2 = stmt2.executeQuery("select id from clients_info where name = '" + user + "'");
 			while (rs2.next()) {
 				userId = rs2.getLong(1);
+			}
+			if (privilege.equals("read")) {
+				String privilegeCheck = checkLocation(fileId, user);
+				if (privilegeCheck != null
+						&& privilegeCheck.substring(0, privilegeCheck.indexOf('+')).equals("write")) {
+					jsonObject.put("success", "false");
+					return jsonObject;
+				}
 			}
 			prepStmt = con.prepareStatement("insert ignore into shared_users_info values(?,?,?)",
 					Statement.RETURN_GENERATED_KEYS);
@@ -361,6 +373,8 @@ public class ClientsInfoDao {
 			} catch (Exception e) {
 			}
 		}
+		jsonObject.put("success", "true");
+		return jsonObject;
 	}
 
 	public static LinkedHashMap<String, String> sharedUsersForAFile(String location) {
@@ -485,34 +499,36 @@ public class ClientsInfoDao {
 		}
 	}
 
-	public static JSONObject search(LinkedHashMap<Integer, ArrayList<Integer>> wordDetailMap, String user) {
+	public static JSONArray search(LinkedHashMap<Integer, ArrayList<Integer>> wordDetailMap, String user) {
 		JSONObject jsonObject = new JSONObject();
+		JSONArray jsonArray = new JSONArray();
 		for (Map.Entry<Integer, ArrayList<Integer>> entry : wordDetailMap.entrySet()) {
 //			System.out.println("file id: " + entry.getKey() + " user: " + user);
-			String fileLocation = check(entry.getKey(), user);
+			String fileLocation = checkLocation(entry.getKey(), user);
 			if (fileLocation != null) {
-				jsonObject.put(fileLocation, entry.getValue().size());
+				jsonObject.put(fileLocation.substring(fileLocation.indexOf('+') + 1), entry.getValue().size());
 			}
 		}
 
 		if (jsonObject.size() == 0) {
-			return jsonObject;
+			return jsonArray;
 		}
-
-		List<Map.Entry<String, Integer>> list = new LinkedList<Map.Entry<String, Integer>>(jsonObject.entrySet());
+		Set<Entry<String, Integer>> set = jsonObject.entrySet();
+		List<Entry<String, Integer>> list = new ArrayList<Entry<String, Integer>>(set);
 		Collections.sort(list, new Comparator<Map.Entry<String, Integer>>() {
 			public int compare(Map.Entry<String, Integer> o1, Map.Entry<String, Integer> o2) {
-				return (o1.getValue()).compareTo(o2.getValue());
+				return (o2.getValue()).compareTo(o1.getValue());
 			}
 		});
-		jsonObject.clear();
 		for (Map.Entry<String, Integer> aa : list) {
+			jsonObject = new JSONObject();
 			jsonObject.put(aa.getKey(), aa.getValue());
+			jsonArray.add(jsonObject);
 		}
-		return jsonObject;
+		return jsonArray;
 	}
 
-	private static String check(long fileId, String user) {
+	public static String checkLocation(long fileId, String user) {
 		Statement stmt = null, stmt2 = null, stmt1 = null;
 		ResultSet rs = null, rs2 = null, rs1 = null;
 		String ownerName = null, fileLocation = null;
@@ -522,9 +538,9 @@ public class ClientsInfoDao {
 					+ "' and ownername = '" + user + "'");
 			while (rs.next()) {
 				if (rs.getString(2).equals("")) {
-					return rs.getString(1) + "/" + rs.getString(3);
+					return "owner" + "+" + rs.getString(1) + "/" + rs.getString(3);
 				} else {
-					return rs.getString(1) + "/" + rs.getString(2) + "/" + rs.getString(3);
+					return "owner" + "+" + rs.getString(1) + "/" + rs.getString(2) + "/" + rs.getString(3);
 				}
 			}
 
@@ -546,7 +562,7 @@ public class ClientsInfoDao {
 					+ fileLocation + "',1,char_length(concat(f.filelocation,f.filename)))");
 			while (rs2.next()) {
 				if (rs2.getString(1) != null) {
-					return ownerName + "/" + fileLocation;
+					return rs2.getString(1) + "+" + ownerName + "/" + fileLocation;
 				}
 			}
 		} catch (SQLException e) {
@@ -584,5 +600,39 @@ public class ClientsInfoDao {
 			}
 		}
 		return null;
+	}
+
+	public static LinkedList<String> getFilesInDirectory(String location) {
+		Statement stmt = null, stmt2 = null;
+		ResultSet rs = null;
+		int firstIndex = location.indexOf('/');
+		int lastIndex = location.lastIndexOf('/');
+		String ownerName = location.substring(0, firstIndex);
+		String fileLocation = location.substring(lastIndex+1);
+		LinkedList<String> list = new LinkedList<String>();
+		try {
+			stmt = con.createStatement();
+			rs = stmt.executeQuery(
+					"select CONCAT(ownername, '/', filelocation, '/', filename) from files_info where ownername = '"
+							+ ownerName + "' and filelocation like '%" + fileLocation + "%' and filename like '%.txt'");
+			while (rs.next()) {
+				list.add(rs.getString(1));
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		} finally {
+			try {
+				if (stmt != null)
+					stmt.close();
+			} catch (Exception e) {
+			}
+			try {
+				if (stmt2 != null)
+					stmt2.close();
+			} catch (Exception e) {
+			}
+		}
+		System.out.println(list);
+		return list;
 	}
 }

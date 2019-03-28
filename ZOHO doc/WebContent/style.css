@@ -1,5 +1,14 @@
 @charset "UTF-8";
 
+#bigblackbutton {
+	-webkit-appearance: none;
+	background-color: black;
+	font-size: 20px;
+	color: white;
+	height: 40px;
+	width: 200px
+}
+
 .topbar {
 	overflow: auto;
 	background-color: #D7DBDD;
@@ -31,10 +40,15 @@
 	padding: 8px 10px 10px 10px;
 	float: left;
 	display: inline-block;
-	opacity: 1;
+	opacity: 0.5;
 }
 
-.container:focus {
+.active {
+	opacity: 1;
+	cursor: pointer;
+	padding: 8px 10px 10px 10px;
+	float: left;
+	display: inline-block;
 	opacity: 1;
 }
 /* 
@@ -180,6 +194,12 @@ td {
 	height: 25px;
 }
 
+.replace {
+	background-color: green;
+	color: white;
+	height: 25px;
+}
+
 .editshare {
 	background-color: yellow;
 	height: 23px;
@@ -190,9 +210,9 @@ td {
 	background-color: white;
 	position: fixed;
 	top: 165px;
-	right: 0px;
+	right: 35%;
 	width: 30%;
-	height: 145px;
+	height: 245px;
 	z-index: 2;
 	border: 3px solid black;
 	display: none;

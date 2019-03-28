@@ -2,22 +2,22 @@ package com.utilities;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.Map;
 
 public class Trie implements Serializable {
 	public static final long serialVersionUID = 20003L;
-	private TrieNode root = new TrieNode();
+	private TrieNode root = new TrieNode(null);
 
 	static class TrieNode implements Serializable {
-		public static final long serialVersionUID = 20004L;
-		ArrayList<Character> charArray;
+		Character c;
 		ArrayList<TrieNode> nodeArray;
 		WordUtil wordDetail;
 
-		TrieNode() {
-			charArray = new ArrayList<Character>();
+		TrieNode(Character character) {
+			c = character;
 			nodeArray = new ArrayList<TrieNode>();
 			wordDetail = null;
 		}
@@ -33,41 +33,88 @@ public class Trie implements Serializable {
 	};
 
 	public void insert(String key, WordUtil wordDetail) {
+		key = key.toLowerCase();
 		int length = key.length();
 		char letter;
 		TrieNode trieNode = root;
 		for (int level = 0; level < length; level++) {
 			letter = key.charAt(level);
-			if (!trieNode.charArray.contains(letter)) {
-				trieNode.charArray.add(letter);
-				trieNode.nodeArray.add(new TrieNode());
+			boolean contains = false;
+			for (TrieNode node : trieNode.nodeArray) {
+				if (node.c.equals(letter)) {
+					contains = true;
+					trieNode = node;
+					break;
+				}
 			}
-			trieNode = trieNode.nodeArray.get(trieNode.charArray.indexOf(letter));
+			if (!contains) {
+				TrieNode tempNode = new TrieNode(letter);
+				trieNode.nodeArray.add(tempNode);
+				trieNode = tempNode;
+			}
 		}
 		trieNode.wordDetail = wordDetail;
 	}
 
+	public LinkedList<String> editDistance(String key) {
+		key = key.toLowerCase();
+		Character first = key.charAt(0);
+		TrieNode trieNode = root;
+		boolean contains = false;
+		for (TrieNode node : trieNode.nodeArray) {
+			if (node.c.equals(first)) {
+				trieNode = node;
+				contains = true;
+				break;
+			}
+		}
+		if (!contains)
+			return null;
+		LinkedList<String> pairs = new LinkedList<String>();
+		if (trieNode.wordDetail != null) {
+			pairs.add(key);
+		}
+//		for (int i = 0; i < trieNode.nodeArray.size(); i++) {
+			
+//			System.out.println(
+//					getSuggestionsMax(new LinkedList<String>(), String.valueOf(first), trieNode, key.length() + 2));
+			pairs.addAll(
+					getSuggestionsMax(new LinkedList<String>(), String.valueOf(first), trieNode, key.length() + 2));
+//		}
+		LinkedList<String> foundWords = new LinkedList<String>();
+		for (String predictedWord : pairs) {
+			if (Utilities.editDistance(key, predictedWord, key.length(), predictedWord.length()) <= 3) {
+				foundWords.add(predictedWord);
+			}
+		}
+		return foundWords;
+	}
+
 	public LinkedList<String> searchPrefix(String key) {
+		key = key.toLowerCase();
 		int length = key.length();
 		Character letter;
 		TrieNode trieNode = root;
 		for (int level = 0; level < length; level++) {
 			letter = key.charAt(level);
-			if (trieNode.charArray.indexOf(letter) == -1)
+			boolean contains = false;
+			for (TrieNode node : trieNode.nodeArray) {
+				if (node.c.equals(letter)) {
+					contains = true;
+					trieNode = node;
+					break;
+				}
+			}
+			if (!contains)
 				return null;
-			trieNode = trieNode.nodeArray.get(trieNode.charArray.indexOf(letter));
-		}
-		if (trieNode == null) {
-			return null;
 		}
 		LinkedList<String> pairs = new LinkedList<String>();
 		if (trieNode.wordDetail != null) {
 			pairs.add(key);
-			return pairs;
 		}
-		for (int i = 0; i < trieNode.charArray.size(); i++) {
-			pairs = getSuggestions(new LinkedList<String>(), key, trieNode);
-		}
+//		for (int i = 0; i < trieNode.nodeArray.size(); i++) {
+			pairs.addAll(getSuggestions(new LinkedList<String>(), key, trieNode));
+//		}
 		return pairs;
 	}
 
@@ -79,25 +126,29 @@ public class Trie implements Serializable {
 			pairs.add(word);
 
 		}
-		for (int i = 0; i < trieNode.charArray.size(); i++) {
-			word += trieNode.charArray.get(i);
+		for (int i = 0; i < trieNode.nodeArray.size(); i++) {
+			word += trieNode.nodeArray.get(i).c;
 			pairs = getSuggestions(pairs, word, trieNode.nodeArray.get(i));
 			word = word.substring(0, word.length() - 1);
 		}
 		return pairs;
 	}
 
-	public LinkedList<WordDetailPair> print(LinkedList<WordDetailPair> pairs, String word, TrieNode trieNode) {
+	private LinkedList<String> getSuggestionsMax(LinkedList<String> pairs, String word, TrieNode trieNode, int max) {
+		if (max == 0) {
+			return pairs;
+		}
 		if (trieNode == null) {
 			return null;
 		}
 		if (trieNode.wordDetail != null) {
-			pairs.add(new WordDetailPair(word, trieNode.wordDetail));
+			pairs.add(word);
 
 		}
-		for (int i = 0; i < trieNode.charArray.size(); i++) {
-			word += trieNode.charArray.get(i);
-			pairs = print(pairs, word, trieNode.nodeArray.get(i));
+		for (int i = 0; i < trieNode.nodeArray.size(); i++) {
+			word += trieNode.nodeArray.get(i).c;
+			pairs = getSuggestionsMax(pairs, word, trieNode.nodeArray.get(i), max - 1);
+			word = word.substring(0, word.length() - 1);
 		}
 		return pairs;
 	}
@@ -132,43 +183,58 @@ public class Trie implements Serializable {
 		WordUtil wordUtil3 = new WordUtil();
 		wordUtil3.setInfoMap(infoMap3);
 
-		trie.insert("new", wordUtil2);
-		trie.insert("creationwfd", wordUtil);
-		trie.insert("wordrd1", wordUtil3);
-		trie.insert("word111", wordUtil3);
-		trie.remove("new", 1, 1);
-		trie.remove("new", 1, 2);
-		System.out.println(trie.getWordUtil("new"));
+		trie.insert("newfile1", wordUtil2);
+//		trie.remove("newer", 1, 1);
+//		trie.remove("newest", 1, 2);
+		System.out.println(trie.editDistance("newfile2"));
 	}
 
 	public WordUtil getWordUtil(String key) {
+		key = key.toLowerCase();
 		int length = key.length();
 		Character letter;
 		TrieNode trieNode = root;
 		for (int level = 0; level < length; level++) {
 			letter = key.charAt(level);
-			if (trieNode.charArray.indexOf(letter) == -1)
+			boolean contains = false;
+			for (TrieNode node : trieNode.nodeArray) {
+				if (node.c.equals(letter)) {
+					contains = true;
+					trieNode = node;
+					break;
+				}
+			}
+			if (!contains) {
 				return null;
-			trieNode = trieNode.nodeArray.get(trieNode.charArray.indexOf(letter));
+			}
 		}
-		if (trieNode == null || trieNode.wordDetail == null) {
+		if (trieNode.wordDetail == null) {
 			return null;
 		}
 		return trieNode.wordDetail;
 	}
 
 	public boolean remove(String key, int fileId, int position) {
-		System.out.println("remove: " + key + fileId + position);
+//		System.out.println("remove: " + key + fileId + position);
+		key = key.toLowerCase();
 		int length = key.length();
 		Character letter;
 		TrieNode trieNode = root;
 		for (int level = 0; level < length; level++) {
 			letter = key.charAt(level);
-			if (trieNode.charArray.indexOf(letter) == -1)
+			boolean contains = false;
+			for (TrieNode node : trieNode.nodeArray) {
+				if (node.c.equals(letter)) {
+					contains = true;
+					trieNode = node;
+					break;
+				}
+			}
+			if (!contains) {
 				return false;
-			trieNode = trieNode.nodeArray.get(trieNode.charArray.indexOf(letter));
+			}
 		}
-		if (trieNode == null || trieNode.wordDetail == null) {
+		if (trieNode.wordDetail == null) {
 			return false;
 		}
 		if (trieNode.wordDetail.getInfoMap().containsKey(fileId)) {

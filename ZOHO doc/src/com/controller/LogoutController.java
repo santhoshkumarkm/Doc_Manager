@@ -26,6 +26,10 @@ public class LogoutController extends HttpServlet {
 	protected void doGet(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
 		HttpSession session = request.getSession();
+		session.removeAttribute("user");
+		if (session.getAttribute("privilege") != null) {
+			session.removeAttribute("privilege");
+		}
 		session.invalidate();
 		JSONObject jsonObject = new JSONObject();
 		jsonObject.put("success", "true");

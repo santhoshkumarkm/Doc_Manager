@@ -2,6 +2,9 @@ var owner = null;
 var currentDir = null;
 var currentPrivilege = null;
 var selectedButton = null;
+var allUserList = [];
+
+var commonWords = ["the", "and", "that", "have", "for", "not", "with", "you", "this", "but", "his", "from", "they", "her", "she", "will", "would", "there", "their", "your", "could", "also"];
 
 var folderImg = document.createElement('img');
 folderImg.setAttribute('src', '../images/folder.png');
@@ -17,12 +20,13 @@ fileImg.setAttribute('class', 'icon');
 var fileImgDiv = document.createElement('div');
 fileImgDiv.appendChild(fileImg);
 
-function getSharedUsers() {
+function getSharedUsers(rootUser) {
 	var xmlhttp = new XMLHttpRequest();
 	xmlhttp.onreadystatechange = function() {
 		if (this.readyState == 4 && this.status == 200) {
 			var userListObj = JSON.parse(this.responseText);
 			var userList = userListObj.userList;
+			allUserList.push(rootUser);
 			userList.forEach(userListTraverse);
 		}
 	};
@@ -31,6 +35,7 @@ function getSharedUsers() {
 }
 
 function userListTraverse(value) {
+	allUserList.push(value);
 	var textDiv = document.createElement('div');
 	textDiv.setAttribute('class', 'text');
 	textDiv.appendChild(document.createTextNode(value + " " + "(shared)"));
@@ -48,39 +53,56 @@ function userListTraverse(value) {
 function viewFiles(user, privilege="default") {
 	currentDir = user;
 	currentPrivilege = privilege;
+	var flag = false;
+	if(location.hash.substring(1) == user){
+		flag = true;
+	}
 	location.hash = user;
+	for (var i = 0; i < allUserList.length; i++) {
+		document.getElementById(allUserList[i]).style.opacity = "0.5";
+	}
+	if(flag){
+		onHashChange();
+	}
+	
 }
 
 function setOwner(user){
+	if(user == "null"){
+		logout();
+	}
 	owner = user;
-	currentDir = user;
+	var currentLocation = location.hash.substring(1);
 	var xmlhttp = new XMLHttpRequest();
 	xmlhttp.onreadystatechange = function() {
 		if (this.readyState == 4 && this.status == 200) {
 			var successCheck = JSON.parse(this.responseText);
 			if(successCheck.success == "true"){
-				if(location.hash != ""){					
+				if(location.hash != ""){
 					onHashChange();
-					viewFiles(location.hash.substring(1));
+						viewFiles(currentLocation, successCheck.privilege);
 				}
 			} else {
 				logout();
 			}
 		}
 	};
-	xmlhttp.open("GET", "../ValidateController?user=" + owner, true);
+	xmlhttp.open("GET", "../ValidateController?location=" + currentLocation, true);
 	xmlhttp.send();
 }
 
 function openFolder(file, privilege) {
+	if(file=="success" && privilege=="logout"){
+		logout();
+	}
 	var item = document.createElement('li');
 	item.setAttribute('class', 'list');
 	var button = document.createElement('button');
 	button.addEventListener('contextmenu', function(element) {
 		element.preventDefault();
-	    buttonRightClick(event, this.id);
+		buttonRightClick(event, this.id);
 	});
-	button.setAttribute('type','button');
+	button.setAttribute('type', 'button');
 	button.setAttribute('class', 'openfolderbutton');
 	button.setAttribute('id', file);
 	if (file.slice(-4) == ".txt") {
@@ -90,7 +112,7 @@ function openFolder(file, privilege) {
 		fileImg.setAttribute('width', '25px');
 		fileImg.setAttribute('height', '25px');
 		button.appendChild(fileImg);
-		button.setAttribute('ondblclick', "openFile('"+file+"','"+privilege+"')");
+		button.setAttribute('ondblclick', "openFile('" + file + "')");
 	} else {
 		var folderImg = document.createElement('img');
 		folderImg.setAttribute('src', '../images/folder.png');
@@ -98,17 +120,18 @@ function openFolder(file, privilege) {
 		folderImg.setAttribute('width', '25px');
 		folderImg.setAttribute('height', '25px');
 		button.appendChild(folderImg);
-		button.setAttribute('ondblclick', "viewFiles('"+file+"','"+privilege+"')");
+		button.setAttribute('ondblclick', "viewFiles('" + file + "','"
+				+ privilege + "')");
 	}
 	var btnText;
-	if(file.indexOf('/') != -1){
-		btnText = file.substring(file.lastIndexOf('/')+1);
+	if (file.indexOf('/') != -1) {
+		btnText = file.substring(file.lastIndexOf('/') + 1);
 	} else {
 		btnText = file;
 	}
-	if (privilege != "default") {
-		button.appendChild(document.createTextNode(" " + btnText + " (" + privilege
-				+ ")"));
+	if (privilege != "owner") {
+		button.appendChild(document.createTextNode(" " + btnText + " ("
+				+ privilege + ")"));
 	} else {
 		button.appendChild(document.createTextNode(" " + btnText));
 	}
@@ -116,143 +139,176 @@ function openFolder(file, privilege) {
 	document.getElementById("myfolderlist").appendChild(item);
 }
 
-function goBack(){
+function goBack() {
+	closeBoxForm();
+	closeButtonForm();
 	var xmlhttp = new XMLHttpRequest();
 	xmlhttp.onreadystatechange = function() {
 		if (this.readyState == 4 && this.status == 200) {
 			var accessCheck = JSON.parse(this.responseText);
-			if(accessCheck.access != "denied"){		
+			if (accessCheck.access != "denied") {
+//				alert(accessCheck.prevLocation+"@"+ accessCheck.access)
 				viewFiles(accessCheck.prevLocation, accessCheck.access);
 			}
 		}
 	};
-	xmlhttp.open("GET", "../GoBackController?location=" + currentDir, true);
+//	var prevLocation;
+//	if(location.hash.lastIndexOf('/') != -1){
+//		location.hash = location.hash.substring(1,location.hash.lastIndexOf('/'));
+//	} else {
+//		location.hash = location.hash.substring(1);
+//	}
+	xmlhttp.open("GET", "../GoBackController?location=" + location.hash.substring(1), true);
 	xmlhttp.send();
 }
 
-function setBoxRightClick(){
-	document.getElementById("viewbox").addEventListener('contextmenu', function(element) {
-		element.preventDefault();
-	    windowRightClick(event);
-	});
+function setBoxRightClick() {
+	document.getElementById("viewbox").addEventListener('contextmenu',
+			function(element) {
+				element.preventDefault();
+				windowRightClick(event);
+			});
 }
 
-function buttonRightClick(event, id){
-	if (currentPrivilege != "read" && currentPrivilege != "write"){
-		document.getElementById("selected").innerHTML = id.substring(id.lastIndexOf('/')+1);
+function buttonRightClick(event, id) {
+	closeAll();
+	if (currentPrivilege != "read" && currentPrivilege != "write") {
+		document.getElementById("selected").innerHTML = id.substring(id
+				.lastIndexOf('/') + 1);
 		selectedButton = id;
 		document.getElementById("buttonForm").style.display = "block";
-		document.getElementById("buttonForm").style.left = event.clientX  + "px";
-		document.getElementById("buttonForm").style.top = event.clientY  + "px";
+		document.getElementById("buttonForm").style.left = event.clientX + "px";
+		document.getElementById("buttonForm").style.top = event.clientY + "px";
 	}
 }
 
-function windowRightClick(event){
-	if(event.target.nodeName=="DIV" && (currentPrivilege=="write" || currentPrivilege=="default")){
+function windowRightClick(event) {
+	if (event.target.nodeName == "DIV"
+			&& (currentPrivilege == "owner" || currentPrivilege == "write")) {
+		closeAll();
 		document.getElementById("containerForm").style.display = "block";
-		document.getElementById("containerForm").style.left = event.clientX  + "px";
-		document.getElementById("containerForm").style.top = event.clientY  + "px";
+		document.getElementById("containerForm").style.left = event.clientX
+				+ "px";
+		document.getElementById("containerForm").style.top = event.clientY
+				+ "px";
 	}
 }
 
-function closeAll(){
+function closeAll() {
 	closeButtonForm();
 	closeBoxForm();
 	closeSearchMenu();
 	var text = document.getElementById("searchText");
-	text.value="";
+	text.value = "";
 }
 
-function closeButtonForm(){
+function closeButtonForm() {
 	document.getElementById("buttonForm").style.display = "none";
 }
 
-function closeBoxForm(){
+function closeBoxForm() {
 	document.getElementById("containerForm").style.display = "none";
 }
 
-function closeNewFolderForm(){
+function closeNewFolderForm() {
 	document.getElementById("newfolderForm").style.display = "none";
+	document.getElementById("foldername").value = "";
 }
 
-function closeNewFileForm(){
+function closeNewFileForm() {
 	document.getElementById("newfileForm").style.display = "none";
+	document.getElementById("filename").value = "";
 }
 
-function closeEditor(){
+function closeEditor() {
 	document.getElementById("textarea").value = '';
 	document.getElementById("editor").style.display = "none";
 }
 
-function closeShareFileForm(){
+function closeShareFileForm() {
 	document.getElementById("shareFileForm").style.display = "none";
 }
 
-function closeViewShareForm(){
+function closeViewShareForm() {
 	document.getElementById("viewShareForm").style.display = "none";
 }
 
-function closeSearchMenu(){
+function closeSearchMenu() {
 	document.getElementById("searchmenu").style.display = "none";
 }
 
-function deleteFile(){
+function deleteFile() {
 	var xmlhttp = new XMLHttpRequest();
 	xmlhttp.onreadystatechange = function() {
 		if (this.readyState == 4 && this.status == 200) {
 			var successCheck = JSON.parse(this.responseText);
-			if(successCheck.success == "true"){
+			if (successCheck.success == "true") {
 				closeButtonForm();
 				onHashChange();
+			} else if (successCheck.success == "logout") {
+				window.location.replace("../index.jsp");
 			} else {
 				alert(successCheck.success);
 			}
 		}
 	};
-	xmlhttp.open("GET", "../DeleteFileController?location=" + selectedButton, true);
+	xmlhttp.open("GET", "../DeleteFileController?location=" + selectedButton,
+			true);
 	xmlhttp.send();
 }
 
-function newFolder(){
+function newFolder() {
 	closeBoxForm();
 	document.getElementById("newfolderForm").style.display = "block";
 }
 
-function newFolderHandler(){
+function newFolderHandler() {
 	var folderName = document.getElementById("foldername").value;
+	if(folderName == ""){
+		alert("Name Empty");
+		return;
+	}
 	var xmlhttp = new XMLHttpRequest();
 	xmlhttp.onreadystatechange = function() {
 		if (this.readyState == 4 && this.status == 200) {
 			var successCheck = JSON.parse(this.responseText);
-			if(successCheck.success == "true"){
+			if (successCheck.success == "true") {
 				closeNewFolderForm();
 				onHashChange();
+			} else if (successCheck.success == "logout") {
+				window.location.replace("../index.jsp");
 			} else {
 				alert(successCheck.success);
 			}
 		}
 	};
-	xmlhttp.open("GET", "../NewFolderController?location=" + currentDir +"&foldername=" + folderName, true);
+	xmlhttp.open("GET", "../NewFolderController?location=" + currentDir
+			+ "&foldername=" + folderName, true);
 	xmlhttp.send();
 }
 
-function newFile(){
+function newFile() {
 	closeBoxForm();
 	document.getElementById("newfileForm").style.display = "block";
 }
 
 var fileName;
-function newFileHandler(){
-	closeNewFileForm();
+function newFileHandler() {
 	fileName = document.getElementById("filename").value;
-	document.getElementById("displayfilename").innerHTML = fileName+".txt";
+	if(fileName == ""){
+		alert("Name Empty");
+		return;
+	}
+	closeNewFileForm();
+
+	document.getElementById("displayfilename").innerHTML = fileName + ".txt";
 	document.getElementById("editor").style.display = "block";
 	document.getElementById("savebutton").style.display = "inline-block";
 	document.getElementById("editbutton").style.display = "none";
 	document.getElementById("textarea").disabled = false;
 }
 
-function submitFile(){
+function submitFile() {
 	var text = document.getElementById("textarea").value;
 	var xmlhttp = new XMLHttpRequest();
 	fileName = document.getElementById("displayfilename").innerHTML;
@@ -260,55 +316,62 @@ function submitFile(){
 	xmlhttp.onreadystatechange = function() {
 		if (this.readyState == 4 && this.status == 200) {
 			var successCheck = JSON.parse(this.responseText);
-			if(successCheck.success == "true"){
+			if (successCheck.success == "true") {
 				closeEditor();
 				onHashChange();
+			} else if (successCheck.success == "logout") {
+				window.location.replace("../index.jsp");
 			} else {
 				alert(successCheck.success);
 			}
 		}
 	};
-	if(document.getElementById("editbutton").style.display == "inline-block"){
-		xmlhttp.open("POST", "../NewFileController?location=" + currentDir + "&filename=" + fileName + "&mode=edit", true);
-	} else {		
-		xmlhttp.open("POST", "../NewFileController?location=" + currentDir + "&filename=" + fileName + "&mode=new", true);
+	if (document.getElementById("editbutton").style.display == "inline-block") {
+		xmlhttp.open("POST", "../NewFileController?location=" + currentDir
+				+ "&filename=" + fileName + "&mode=edit", true);
+	} else {
+		xmlhttp.open("POST", "../NewFileController?location=" + currentDir
+				+ "&filename=" + fileName + "&mode=new", true);
 	}
 	xmlhttp.send(text);
 }
 
-function openFile(fileName, privilege){
-	
+function openFile(fileName) {
 	var xmlhttp = new XMLHttpRequest();
 	xmlhttp.onreadystatechange = function() {
 		if (this.readyState == 4 && this.status == 200) {
 			var successCheck = JSON.parse(this.responseText);
-			if(successCheck.success == "true"){
+			if (successCheck.success == "true") {
 				document.getElementById("textarea").value = successCheck.content;
 				document.getElementById("textarea").disabled = true;
 				document.getElementById("savebutton").style.display = "none";
-				if(privilege=="read"){
+				if (successCheck.privilege == "read") {
 					fileName = fileName + " (Read only mode)";
 				} else {
 					document.getElementById("editbutton").style.display = "inline-block";
+					document.getElementById("editbutton").style.opacity = "1";
 				}
 				document.getElementById("displayfilename").innerHTML = fileName;
 				document.getElementById("editor").style.display = "block";
+			} else if (successCheck.success == "logout") {
+				window.location.replace("../index.jsp");
 			} else {
 				alert(successCheck.success);
 			}
 		}
 	};
-	xmlhttp.open("GET", "../OpenFileController?location=" + currentDir + "&filename=" + fileName, true);
+	xmlhttp.open("GET", "../OpenFileController?location=" + currentDir
+			+ "&filename=" + fileName, true);
 	xmlhttp.send();
 }
 
-function editFile(){
+function editFile() {
 	document.getElementById("textarea").disabled = false;
 	document.getElementById("savebutton").style.display = "inline-block";
 	document.getElementById("editbutton").style.opacity = "0.5";
 }
 
-function shareFile(){
+function shareFile() {
 	var readSelect = document.getElementById("readselect");
 	while (readSelect.firstChild) {
 		readSelect.removeChild(readSelect.firstChild);
@@ -317,28 +380,32 @@ function shareFile(){
 	xmlhttp.onreadystatechange = function() {
 		if (this.readyState == 4 && this.status == 200) {
 			var parcedJsonObject = JSON.parse(this.responseText);
-			if(parcedJsonObject.success == "true"){
+			if (parcedJsonObject.success == "true") {
 				closeButtonForm();
-				document.getElementById("selectedFile").innerHTML = selectedButton.substring(selectedButton.lastIndexOf('/')+1);
+				document.getElementById("selectedFile").innerHTML = selectedButton
+						.substring(selectedButton.lastIndexOf('/') + 1);
 				var option = document.createElement('option');
 				parcedJsonObject.users.forEach(addOption);
 				document.getElementById("shareFileForm").style.display = "block";
+			} else if (parcedJsonObject.success == "logout") {
+				window.location.replace("../index.jsp");
 			} else {
 				alert(successCheck.success);
 			}
 		}
 	};
-	xmlhttp.open("GET", "../AllUserListController?location=" + selectedButton, true);
+	xmlhttp.open("GET", "../AllUserListController?location=" + selectedButton,
+			true);
 	xmlhttp.send();
 }
 
-function addOption(value){
+function addOption(value) {
 	var option = document.createElement('option');
 	option.appendChild(document.createTextNode(value));
 	document.getElementById("readselect").appendChild(option);
 }
 
-function shareFileHandler(){
+function shareFileHandler() {
 	var readSelect = document.getElementById("readselect");
 	var getPrivilege;
 	if (document.getElementById('read').checked) {
@@ -347,40 +414,48 @@ function shareFileHandler(){
 		getPrivilege = "write"
 	}
 	var opt = [];
-	for (var i=0, len=readSelect.options.length; i<len; i++) {
-		if(readSelect.options[i].selected)
+	for (var i = 0, len = readSelect.options.length; i < len; i++) {
+		if (readSelect.options[i].selected)
 			opt.push(readSelect.options[i].value);
 	}
 	var xmlhttp = new XMLHttpRequest();
 	xmlhttp.onreadystatechange = function() {
 		if (this.readyState == 4 && this.status == 200) {
 			var successCheck = JSON.parse(this.responseText);
-			if(successCheck.success == "true"){
+			if (successCheck.success == "true") {
 				closeShareFileForm();
+			} else if (successCheck.success == "logout") {
+				window.location.replace("../index.jsp");
 			} else {
 				alert(successCheck.success);
 			}
 		}
 	};
-	if(opt != ""){		
-		xmlhttp.open("POST", "../ShareFileController?location=" + selectedButton + "&privilege=" + getPrivilege, true);
+	if (opt != "") {
+		xmlhttp.open("POST", "../ShareFileController?location="
+				+ selectedButton + "&privilege=" + getPrivilege, true);
 		xmlhttp.send(opt);
 	} else {
 		alert("No user selected");
 	}
 }
 
-function viewShare(){
+function viewShare() {
 	var xmlhttp = new XMLHttpRequest();
 	xmlhttp.onreadystatechange = function() {
 		if (this.readyState == 4 && this.status == 200) {
 			var parsedJsonObj = JSON.parse(this.responseText);
 			closeButtonForm();
-			if(Object.keys(parsedJsonObj)[0] == "notshared"){
+			if(parsedJsonObj.success == "ERROR"){
+				alert(parsedJsonObj.success);
+				return;
+			}
+			if (Object.keys(parsedJsonObj)[0] == "notshared") {
 				alert("No Shared users");
 				return;
 			}
-			document.getElementById("viewFile").innerHTML = selectedButton.substring(selectedButton.lastIndexOf('/')+1);
+			document.getElementById("viewFile").innerHTML = selectedButton
+					.substring(selectedButton.lastIndexOf('/') + 1);
 			var table = document.getElementById("table");
 			while (table.firstChild) {
 				table.removeChild(table.firstChild);
@@ -394,86 +469,115 @@ function viewShare(){
 			trHeader.appendChild(th2);
 			table.appendChild(trHeader);
 			for (x in parsedJsonObj) {
+				if(x == "success"){
+					continue;
+				}
 				var editOption = document.createElement('button');
 				var p = document.createElement('span');
 				p.innerHTML = "&#8644;";
 				editOption.appendChild(p);
-				editOption.setAttribute('id',x);
+				editOption.setAttribute('id', x);
 				editOption.setAttribute('onclick', 'change(this.id)');
-				editOption.setAttribute('type','button');
-				editOption.setAttribute('class','editshare');
+				editOption.setAttribute('type', 'button');
+				editOption.setAttribute('class', 'editshare');
 				var removeOption = document.createElement('button');
 				var span = document.createElement('span');
 				span.innerHTML = "&#10005;";
 				removeOption.appendChild(span);
-				removeOption.setAttribute('id',x);
+				removeOption.setAttribute('id', x);
 				removeOption.setAttribute('onclick', 'removeShare(this.id)');
-				removeOption.setAttribute('type','button');
-				removeOption.setAttribute('class','removeshare');
+				removeOption.setAttribute('type', 'button');
+				removeOption.setAttribute('class', 'removeshare');
 				var tr = document.createElement('tr');
 				var td1 = document.createElement('td');
 				td1.appendChild(document.createTextNode(x));
-				td1.setAttribute('align','center');
+				td1.setAttribute('align', 'center');
 				tr.appendChild(td1);
 				var td2 = document.createElement('td');
-				td2.appendChild(document.createTextNode(parsedJsonObj[x] + " "));
+				td2
+						.appendChild(document.createTextNode(parsedJsonObj[x]
+								+ " "));
 				td2.appendChild(editOption);
 				td2.appendChild(removeOption);
-				td2.setAttribute('align','right');
+				td2.setAttribute('align', 'right');
 				tr.appendChild(td2);
 				table.appendChild(tr);
 				document.getElementById("viewShareForm").style.display = "block";
 			}
 		}
 	};
-	xmlhttp.open("GET", "../ViewShareController?location=" + selectedButton, true);
+	xmlhttp.open("GET", "../ViewShareController?location=" + selectedButton,
+			true);
 	xmlhttp.send();
 }
 
-function removeShare(sharedUser){
+function removeShare(sharedUser) {
 	var xmlhttp = new XMLHttpRequest();
 	xmlhttp.onreadystatechange = function() {
 		if (this.readyState == 4 && this.status == 200) {
 			var successCheck = JSON.parse(this.responseText);
-			if(successCheck.success == "true"){
+			if (successCheck.success == "true") {
 				closeViewShareForm();
 				viewShare();
-			} else {
-					alert(successCheck.success);
-				}
-		}
-	};
-	xmlhttp.open("GET", "../RemoveShareController?user=" + sharedUser +"&location=" + selectedButton, true);
-	xmlhttp.send();
-}
-
-function change(sharedUser){
-	var xmlhttp = new XMLHttpRequest();
-	xmlhttp.onreadystatechange = function() {
-		if (this.readyState == 4 && this.status == 200) {
-			var successCheck = JSON.parse(this.responseText);
-			if(successCheck.success == "true"){
-				closeViewShareForm();
-				viewShare();
+			} else if (successCheck.success == "logout") {
+				window.location.replace("../index.jsp");
 			} else {
 				alert(successCheck.success);
 			}
 		}
 	};
-	xmlhttp.open("POST", "../ChangePrivilegeController?user=" + sharedUser +"&location=" + selectedButton, true);
+	xmlhttp.open("GET", "../RemoveShareController?user=" + sharedUser
+			+ "&location=" + selectedButton, true);
 	xmlhttp.send();
 }
 
-function onKeyPress(){
+function change(sharedUser) {
+	var xmlhttp = new XMLHttpRequest();
+	xmlhttp.onreadystatechange = function() {
+		if (this.readyState == 4 && this.status == 200) {
+			var successCheck = JSON.parse(this.responseText);
+			if (successCheck.success == "true") {
+				closeViewShareForm();
+				viewShare();
+			} else if (successCheck.success == "logout") {
+				window.location.replace("../index.jsp");
+			} else {
+				alert(successCheck.success);
+			}
+		}
+	};
+	xmlhttp.open("POST", "../ChangePrivilegeController?user=" + sharedUser
+			+ "&location=" + selectedButton, true);
+	xmlhttp.send();
+}
+
+function onKeyPress() {
 	var text = document.getElementById("searchText");
-	if(text.value.length >= 3){
+	if (text.value.length >= 3) {
+		for (var i = 0; i < commonWords.length; i++) {
+			if(commonWords[i] == text.value){
+				return;
+			}
+		}
 		var xmlhttp = new XMLHttpRequest();
 		xmlhttp.onreadystatechange = function() {
 			if (this.readyState == 4 && this.status == 200) {
 				var successCheck = JSON.parse(this.responseText);
-				if(successCheck.success != "false"){
-					showFoundFiles(successCheck);
+				var searchMenu = document.getElementById("searchmenu");
+				searchMenu.style.display = "block";
+				var searchResult = document.getElementById("searchresult");
+				while (searchResult.firstChild) {
+					searchResult.removeChild(searchResult.firstChild);
 				}
+				if(successCheck.length == 0){
+					var br = document.createElement('br');
+					document.getElementById("searchresult").appendChild(br);
+					searchResult.appendChild(document.createTextNode(" No matches found ! "));
+					return;
+				}
+					for(var i=0; i<successCheck.length; i++){						
+						showFoundFiles(successCheck[i], successCheck.length);
+					}
 			}
 		};
 		xmlhttp.open("POST", "../SearchController?", true);
@@ -483,37 +587,41 @@ function onKeyPress(){
 	}
 }
 
-function showFoundFiles(successCheck){
-	var searchMenu = document.getElementById("searchmenu");
-	searchMenu.style.display = "block";
+function showFoundFiles(successCheck, length) {
 	var searchResult = document.getElementById("searchresult");
-	while (searchResult.firstChild) {
-		searchResult.removeChild(searchResult.firstChild);
-	}
-	if(Object.keys(successCheck).length == 0){
-		var br = document.createElement('br');
-		document.getElementById("searchresult").appendChild(br);
-		searchResult.appendChild(document.createTextNode(" Not found ! "));
-		return;
-	}
 	for (x in successCheck) {
+		if(x=="editDistance"){
+			var br = document.createElement('br');
+			searchResult.appendChild(br);
+			if(length>1){
+				searchResult.appendChild(document.createTextNode(" Exact word not found. "));
+				searchResult.appendChild(document.createTextNode(" Suggestions : ")); 
+			} else {				
+				searchResult.appendChild(document.createTextNode(" No matches found ! "));
+			}
+			continue;
+		}
 		wordsList(x, successCheck[x]);
 	}
 	var br = document.createElement('br');
 	document.getElementById("searchresult").appendChild(br);
 }
-function wordsList(word, files){
+function wordsList(word, files) {
 	var searchResult = document.getElementById("searchresult");
-	for(x in files){
-		var br = document.createElement('br');
-		searchResult.appendChild(br);
-		searchResult.appendChild(document.createTextNode("Found: " + word + " "));
-		fileList(x, files[x]);
-		var hr = document.createElement('hr');
-		searchResult.appendChild(hr);
+	for(var i=0; i<files.length; i++)
+	{
+		var fileDetail = files[i];
+			var br = document.createElement('br');
+			searchResult.appendChild(br);
+			searchResult.appendChild(document
+					.createTextNode("Found: " + word + " "));
+			fileList(word, Object.keys(fileDetail)[0], Object.values(fileDetail)[0]);
+			var hr = document.createElement('hr');
+			searchResult.appendChild(hr);
 	}
+	
 }
-function fileList(filePath, count){
+function fileList(word, filePath, count) {
 	var item = document.createElement('li');
 	var button = document.createElement('div');
 	button.setAttribute('id', filePath);
@@ -523,26 +631,40 @@ function fileList(filePath, count){
 	fileImg.setAttribute('width', '25px');
 	fileImg.setAttribute('height', '25px');
 	button.appendChild(fileImg);
-	button.appendChild(document.createTextNode(" " + filePath + " (count: "+ count +")"));
+	button.appendChild(document.createTextNode(" " + filePath + " (count: "
+			+ count + ")"));
 	item.appendChild(button);
 	var fileButton = document.createElement('button');
 	fileButton.setAttribute('class', 'editshare');
-	fileButton.setAttribute('onclick',"openFile('"+filePath+"')");
+	fileButton.setAttribute('onclick', "openFile('" + filePath + "')");
 	fileButton.appendChild(document.createTextNode("open"));
 	item.appendChild(fileButton);
 	var folderButton = document.createElement('button');
 	folderButton.setAttribute('class', 'removeshare');
 	folderButton.appendChild(document.createTextNode("open location"));
-	folderButton.setAttribute('onclick',"openSourceLocation('"+filePath+"')");
+	folderButton.setAttribute('onclick', "openSourceLocation('" + filePath
+			+ "')");
 	item.appendChild(folderButton);
+		var replaceButton = document.createElement('button');
+		replaceButton.setAttribute('class', 'replace');
+		replaceButton.appendChild(document.createTextNode("Replace word"));
+		replaceButton.setAttribute('onclick', "replace('" + word
+				+ "')");
+		item.appendChild(replaceButton);
 	document.getElementById("searchresult").appendChild(item);
 }
 
-function openSourceLocation(directory){
+function replace(word){
+	var text = document.getElementById("searchText");
+	text.value = word;
+	onKeyPress();
+}
+
+function openSourceLocation(directory) {
 	location.hash = directory.substring(0, directory.lastIndexOf('/'));
 }
 
-function logout(){
+function logout() {
 	var xmlhttp = new XMLHttpRequest();
 	xmlhttp.onreadystatechange = function() {
 		if (this.readyState == 4 && this.status == 200) {
@@ -554,32 +676,41 @@ function logout(){
 	xmlhttp.send();
 }
 
-function onHashChange(){
+function onHashChange() {
 	window.scrollTo(0, 0);
 	var xmlhttp = new XMLHttpRequest();
 	var hashValue = window.location.hash.substring(1);
 	xmlhttp.onreadystatechange = function() {
 		if (this.readyState == 4 && this.status == 200) {
 			document.getElementById("dispdir").innerHTML = hashValue;
+			if(hashValue.indexOf('/')!=-1){
+				document.getElementById(hashValue.substring(0,hashValue.indexOf('/'))).style.opacity = "1";
+			} else {
+				document.getElementById(hashValue).style.opacity = "1";
+			}
 			var myfolderlist = document.getElementById("myfolderlist");
 			while (myfolderlist.firstChild) {
 				myfolderlist.removeChild(myfolderlist.firstChild);
 			}
 			var parsedJsonObj = JSON.parse(this.responseText);
-			if(parsedJsonObj.success != null){
-				logout();
-			}
-			for (x in parsedJsonObj) {
-				openFolder(x, parsedJsonObj[x]);
+			if (parsedJsonObj.success == "ERROR") {
+				var temp = hashValue.substring(0,hashValue.lastIndexOf('/'));
+				location.hash = temp.substring(0,temp.lastIndexOf('/'));
+				goBack();
+				
+			} else {				
+				for (x in parsedJsonObj) {
+					openFolder(x, parsedJsonObj[x]);
+				}
 			}
 		}
 	};
-	if (hashValue.indexOf('/') == -1){
-		console.log('user');
-		xmlhttp.open("GET", "../ViewFolderController?shareduser=" + hashValue, true);
+	if (hashValue.indexOf('/') == -1) {
+		xmlhttp.open("GET", "../ViewFolderController?shareduser=" + hashValue,
+				true);
 	} else {
-		console.log('location');
-		xmlhttp.open("GET", "../ViewFolderForLocationController?location=" + hashValue, true);
+		xmlhttp.open("GET", "../ViewFolderForLocationController?location="
+				+ hashValue, true);
 	}
 	xmlhttp.send();
 }

@@ -30,12 +30,27 @@ public class ValidateController extends HttpServlet {
 		HttpSession session = request.getSession();
 		JSONObject jsonObject = new JSONObject();
 		String successState = "false";
-		String user = request.getParameter("user");
+		String location = request.getParameter("location");
+		String privilege = null;
 		String sessionUser = (String) session.getAttribute("user");
-		if(user.equals(sessionUser)) {
+		if (location.startsWith(sessionUser)) {
 			successState = "true";
+			privilege = "owner";
+		} else if (location.indexOf('/') == -1) {
+			successState = "true";
+			privilege = "read";
+		} else {
+			long fileId = ClientsInfoDao.getFileId(location);
+			String privilegeInfo = ClientsInfoDao.checkLocation(fileId, sessionUser);
+			privilegeInfo = privilegeInfo.substring(0, privilegeInfo.indexOf('+'));
+			if (privilegeInfo.equals("write") || privilegeInfo.equals("read")) {
+				privilege = privilegeInfo;
+				successState = "true";
+			}
 		}
+//		System.out.println(successState+user+sessionUser);
 		jsonObject.put("success", successState);
+		jsonObject.put("privilege", privilege);
 		response.setContentType("application/json");
 		PrintWriter out = response.getWriter();
 		out.print(jsonObject);

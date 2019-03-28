@@ -9,6 +9,7 @@ import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 
 import org.json.simple.JSONObject;
 
@@ -26,12 +27,16 @@ public class ChangePrivilegeController extends HttpServlet {
 
 	protected void doPost(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
+		HttpSession session = request.getSession();
+		String sessionUser = (String) session.getAttribute("user");
 		JSONObject jsonObject = new JSONObject();
-		String successState = "false";
 		String sharedUser = request.getParameter("user");
 		String location = request.getParameter("location");
-		ClientsInfoDao.changePrivilege(sharedUser, location);
-		successState = "true";
+		String successState = "ERROR";
+		if (location.startsWith(sessionUser)) {
+			ClientsInfoDao.changePrivilege(sharedUser, location);
+			successState = "true";
+		}
 		jsonObject.put("success", successState);
 		response.setContentType("application/json");
 		PrintWriter out = response.getWriter();

@@ -29,10 +29,20 @@ public class UploadFileController extends HttpServlet {
 	protected void doGet(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
 		HttpSession session = request.getSession();
+		String sessionUser = (String) session.getAttribute("user");
 		String fileUrl = request.getParameter("fileurl"), fileName = request.getParameter("filename");
 		File clientFile = new File(fileUrl);
 		StringBuilder stringBuilder = new StringBuilder();
-		if (clientFile.exists()) {
+		boolean flag = false;
+		if (request.getParameter("fileurl").equals(sessionUser)) {
+			flag = true;
+		} else {
+				long fileId = ClientsInfoDao.getFileId(request.getParameter("fileurl"));
+				if(ClientsInfoDao.checkLocation(fileId, sessionUser).equals("write")) {
+					flag = true;
+				}
+		}
+		if (flag && clientFile.exists()) {
 			BufferedReader bin = new BufferedReader(new FileReader(clientFile));
 			String s = "";
 			while ((s = bin.readLine()) != null) {
@@ -40,7 +50,7 @@ public class UploadFileController extends HttpServlet {
 			}
 			bin.close();
 			String content = stringBuilder.toString(),
-					location = session.getAttribute("dir") + "/" + fileName + ".txt";
+					location = fileUrl + "/" + fileName + ".txt";
 			File newFile = new File(defaultLocation + "/" + location);
 			newFile.createNewFile();
 			FileWriter fw = new FileWriter(newFile);

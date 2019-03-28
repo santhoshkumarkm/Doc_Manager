@@ -10,6 +10,7 @@ import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 
 import org.json.simple.JSONObject;
 
@@ -21,15 +22,32 @@ public class ShareFileController extends HttpServlet {
 
 	protected void doPost(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
+		HttpSession session = request.getSession();
+		String sessionUser = (String) session.getAttribute("user");
 		BufferedReader reader = new BufferedReader(new InputStreamReader(request.getInputStream()));
 		String[] users = reader.readLine().split(",");
 		String privilege = request.getParameter("privilege");
 		String location = request.getParameter("location");
 		JSONObject jsonObject = new JSONObject();
-		String successState = "false";
-		for (String user : users) {
-			ClientsInfoDao.shareFile(user, location, privilege);
-			successState = "true";
+		String successState = "ERROR";
+		boolean flag = false;
+		String checkLocation = location.substring(0, location.indexOf('/'));
+		if (checkLocation.equals(sessionUser)) {
+			flag = true;
+		}
+		if (flag) {
+			boolean flag2 = true;
+			for (String user : users) {
+				successState = "true";
+				String tempState = (String) ClientsInfoDao.shareFile(user, location, privilege).get("success");
+				if (tempState.equals("false")) {
+					successState = "ERROR";
+					flag2 = false;
+				}
+			}
+			if (flag2) {
+				successState = "true";
+			}
 		}
 		jsonObject.put("success", successState);
 		response.setContentType("application/json");

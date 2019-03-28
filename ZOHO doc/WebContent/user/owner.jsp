@@ -11,13 +11,22 @@
 <script type="text/javascript" src="../script.js"></script>
 <link href="../style.css" rel="stylesheet" type="text/css">
 </head>
-<body style="background-color: black;" onload="setOwner('<%=user%>')"
-	onhashchange="onHashChange()">
+<body style="background-color: black;" onhashchange="onHashChange()">
 	<%@page import="java.util.ArrayList"%>
 	<%@page import="java.util.List"%>
+	<%
+	response.setHeader("Cache-Control","no-cache"); //Forces caches to obtain a new copy of the page from the origin server
+	response.setHeader("Cache-Control","no-store"); //Directs caches not to store the page under any circumstance
+	response.setDateHeader("Expires", 0); //Causes the proxy cache to see the page as "stale"
+	response.setHeader("Pragma","no-cache"); 
+	%>
 
+	<script type="text/javascript">
+		getSharedUsers('<%=user%>');
+	</script>
+	
 	<div class="topbar" id="topbar">
-		<div class="container" id="root" onclick="viewFiles('<%=user%>')">
+		<div class="container" id="<%=user%>" onclick="viewFiles('<%=user%>','owner')">
 			<div class="icon">
 				<img src='../images/folder.png' class="icon" alt="Folder Image">
 			</div>
@@ -26,7 +35,11 @@
 			</div>
 		</div>
 	</div>
-
+	
+	<script type="text/javascript">
+		setOwner('<%=user%>');
+	</script>
+	
 	<div id="topbarmenu">
 		<div style="float: left; padding: 10px 10px; cursor: default;">
 			<h4
@@ -40,9 +53,10 @@
 				style="display: inline; color: white; background-color: black; padding: 5px 10px 5px 10px; font-family: sans-serif;">
 				Logout</h4>
 		</div>
-		<div style="float: right; margin: 10px;">
-			<form class="search" style="max-width: 300px">
-				<input type="text" id="searchText" placeholder="Min 3 letters..." onkeyup="onKeyPress()">
+		<div style="float:right; position:fixed; right: 40%; margin: 10px;">
+			<form class="search" style="max-width: 300px" autocomplete="off" style="display: inline;">
+				<input type="text" id="searchText" placeholder="Min 3 letters..."
+					onkeyup="onKeyPress()" style="display: inline;">
 				<button type="button" onclick="onKeyPress()"
 					style="display: inline; color: white; background-color: black; padding: 2px 5px 2px 5px; font-family: sans-serif;">Search</button>
 			</form>
@@ -75,10 +89,6 @@
 				onclick="closeBoxForm()">Close</button>
 		</form>
 	</div>
-
-	<script type="text/javascript">
-		getSharedUsers();
-	</script>
 
 	<div class="main">
 		<div
@@ -170,12 +180,12 @@
 	</div>
 
 	<div class="searchmenu" id="searchmenu">
-		<button type="button" style="color: white; background-color: red; position: fixed; right: 18px;"
-					onclick="closeSearchMenu()">Close</button>
-		<div class="searchresult" id="searchresult" style="margin-left: 10px; list-style-type: none;">
-			
-		</div>
+		<button type="button"
+			style="color: white; background-color: red; position: fixed; right: 36.3%;"
+			onclick="closeSearchMenu()">Close</button>
+		<div class="searchresult" id="searchresult"
+			style="margin-left: 10px; list-style-type: none;"></div>
 	</div>
-	
+
 </body>
 </html>

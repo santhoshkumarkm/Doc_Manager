@@ -36,10 +36,8 @@ public class ViewFolderController extends HttpServlet {
 		Map<String, String> crunchifyMap = new LinkedHashMap<String, String>();
 		if (sharedUser.equals(userName)) {
 			crunchifyMap = ClientsInfoDao.getRootUserFiles(userName);
-			session.setAttribute("privilege", "default");
 		} else {
 			crunchifyMap = ClientsInfoDao.getSharedFilesForAnUser(sharedUser, userName);
-			session.setAttribute("privilege", "read");
 		}
 		JSONObject jsonObject = new JSONObject(crunchifyMap);
 		response.setContentType("application/json");

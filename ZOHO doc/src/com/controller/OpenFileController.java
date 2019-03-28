@@ -12,9 +12,11 @@ import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 
 import org.json.simple.JSONObject;
 
+import com.dao.ClientsInfoDao;
 import com.utilities.Utilities;
 
 @WebServlet("/OpenFileController")
@@ -29,16 +31,24 @@ public class OpenFileController extends HttpServlet {
 
 	protected void doGet(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
+		HttpSession session = request.getSession();
+		String userName = (String) session.getAttribute("user");
 		String fileName = request.getParameter("filename");
 		JSONObject jsonObject = new JSONObject();
-		String successState = "false", content="";
+		String successState = "false", content = "";
 		File file = new File(defaultLocation + fileName);
+		String privilege = null;
 		if (file.exists()) {
-			content= Utilities.stringBuilder(new BufferedReader(new FileReader(file)));
+			content = Utilities.stringBuilder(new BufferedReader(new FileReader(file)));
+			privilege = ClientsInfoDao.checkLocation(ClientsInfoDao.getFileId(fileName), userName);
+			if (privilege != null) {
+				privilege = privilege.substring(0, privilege.indexOf('+'));
+			}
 			successState = "true";
 		}
 		jsonObject.put("success", successState);
 		jsonObject.put("content", content);
+		jsonObject.put("privilege", privilege);
 		response.setContentType("application/json");
 		PrintWriter out = response.getWriter();
 		out.print(jsonObject);

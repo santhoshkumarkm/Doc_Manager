@@ -30,22 +30,24 @@ public class ViewFolderForLocationController extends HttpServlet {
 
 	protected void doGet(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
-		String location = URLDecoder.decode(request.getParameter("location"), "UTF-8");
+		String location = request.getParameter("location");
 		Map<String, String> crunchifyMap = new LinkedHashMap<String, String>();
 		HttpSession session = request.getSession();
 		String userName = (String) session.getAttribute("user");
-		if (location.startsWith(userName)) {
-			crunchifyMap = ClientsInfoDao.getRootUserFiles(location);
-			session.setAttribute("privilege", "default");
-		} else {
-			crunchifyMap = ClientsInfoDao.getSharedFilesForALocation(location);
-			if (crunchifyMap.containsValue("read")) {
-				session.setAttribute("privilege", "read");
+		JSONObject jsonObject = null;
+		System.out.println(location + "@" + ClientsInfoDao.getFileId(location));
+		if (location.indexOf('/') != -1 && ClientsInfoDao.getFileId(location) != 0) {
+			if (location.startsWith(userName)) {
+				crunchifyMap = ClientsInfoDao.getRootUserFiles(location);
 			} else {
-				session.setAttribute("privilege", "write");
+				crunchifyMap = ClientsInfoDao.getSharedFilesForALocation(location);
 			}
+			jsonObject = new JSONObject(crunchifyMap);
+		} else {
+			jsonObject = new JSONObject();
+			jsonObject.put("success", "ERROR");
 		}
-		JSONObject jsonObject = new JSONObject(crunchifyMap);
+		System.out.println("json: " + jsonObject);
 		response.setContentType("application/json");
 		PrintWriter out = response.getWriter();
 		out.print(jsonObject);

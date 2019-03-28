@@ -11,6 +11,7 @@ import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 
 import org.json.simple.JSONObject;
 
@@ -28,10 +29,22 @@ public class ViewShareController extends HttpServlet {
 
 	protected void doGet(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
+		HttpSession session = request.getSession();
+		String sessionUser = (String) session.getAttribute("user");
 		String location = request.getParameter("location");
 		Map<String, String> crunchifyMap = new LinkedHashMap<String, String>();
-		crunchifyMap = ClientsInfoDao.sharedUsersForAFile(location);
-		JSONObject jsonObject = new JSONObject(crunchifyMap);
+		String successState = "ERROR";
+		String checkLocation = location.substring(0, location.indexOf('/'));
+		JSONObject jsonObject = null;
+		if (checkLocation.equals(sessionUser)) {
+			crunchifyMap = ClientsInfoDao.sharedUsersForAFile(location);
+			jsonObject = new JSONObject(crunchifyMap);
+			successState = "true";
+		}
+		if (jsonObject == null) {
+			jsonObject = new JSONObject();
+			jsonObject.put("success", successState);
+		}
 		response.setContentType("application/json");
 		PrintWriter out = response.getWriter();
 		out.print(jsonObject);

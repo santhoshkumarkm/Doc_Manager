@@ -29,12 +29,15 @@ public class AllUserListController extends HttpServlet {
 	protected void doGet(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
 		HttpSession session = request.getSession();
+		String sessionUser = (String) session.getAttribute("user");
 		JSONObject jsonObject = new JSONObject();
-		String successState = "false";
-		String user = (String) session.getAttribute("user");
 		String location = request.getParameter("location");
-		JSONArray userListArray = ClientsInfoDao.allUserList(user, location);
-		successState = "true";
+		String successState = "ERROR";
+		JSONArray userListArray = new JSONArray();
+		if (location.startsWith(sessionUser)) {
+			userListArray = ClientsInfoDao.allUserList(sessionUser, location);
+			successState = "true";
+		}
 		jsonObject.put("success", successState);
 		jsonObject.put("users", userListArray);
 		response.setContentType("application/json");

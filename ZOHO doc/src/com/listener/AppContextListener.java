@@ -25,6 +25,6 @@ public class AppContextListener implements ServletContextListener {
 
 		Timer timer = new Timer();
 		AddWordsTask addWordsTask = new AddWordsTask();
-		timer.scheduleAtFixedRate(addWordsTask, 10000, 10000);
+		timer.scheduleAtFixedRate(addWordsTask, 0, 10000);
 	}
 }
