@@ -25,7 +25,7 @@ public class RemoveShareController extends HttpServlet {
 		defaultLocation = getServletContext().getInitParameter("defaultLocation");
 	}
 
-	protected void doGet(HttpServletRequest request, HttpServletResponse response)
+	protected void doPost(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
 		HttpSession session = request.getSession();
 		String sessionUser = (String) session.getAttribute("user");

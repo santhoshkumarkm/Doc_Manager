@@ -3,8 +3,19 @@
 <!DOCTYPE html>
 <html>
 <head>
+<%
+	String user = (String) session.getAttribute("user");
+	if(user!=null){
+%>
+	<script type="text/javascript">
+	window.location.replace("user/owner.jsp");
+	</script>
+<%
+	} 
+%>
 <meta charset="UTF-8">
 <title>Welcome</title>
+<script type="text/javascript" src="../script.js"></script>
 <link href="style.css" rel="stylesheet" type="text/css">
 </head>
 <body>

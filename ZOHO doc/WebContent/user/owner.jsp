@@ -81,8 +81,8 @@
 		<form class="form-container">
 			<button type="button" class="rightclickmenubtn" onclick="newFile()">New
 				File</button>
-			<button type="button" class="rightclickmenubtn"
-				onclick="uploadFile()">Upload File</button>
+			<!-- <button type="button" class="rightclickmenubtn"
+				onclick="uploadFile()">Upload File</button> -->
 			<button type="button" class="rightclickmenubtn" onclick="newFolder()">New
 				Folder</button>
 			<button type="button" class="rightclickmenubtn cancel"

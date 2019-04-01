@@ -35,19 +35,17 @@ public class ViewFolderForLocationController extends HttpServlet {
 		HttpSession session = request.getSession();
 		String userName = (String) session.getAttribute("user");
 		JSONObject jsonObject = null;
-		System.out.println(location + "@" + ClientsInfoDao.getFileId(location));
 		if (location.indexOf('/') != -1 && ClientsInfoDao.getFileId(location) != 0) {
 			if (location.startsWith(userName)) {
 				crunchifyMap = ClientsInfoDao.getRootUserFiles(location);
 			} else {
-				crunchifyMap = ClientsInfoDao.getSharedFilesForALocation(location);
+				crunchifyMap = ClientsInfoDao.getSharedFilesForALocation(location, userName);
 			}
 			jsonObject = new JSONObject(crunchifyMap);
 		} else {
 			jsonObject = new JSONObject();
 			jsonObject.put("success", "ERROR");
 		}
-		System.out.println("json: " + jsonObject);
 		response.setContentType("application/json");
 		PrintWriter out = response.getWriter();
 		out.print(jsonObject);

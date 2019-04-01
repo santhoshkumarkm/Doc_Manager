@@ -33,19 +33,22 @@ public class OpenFileController extends HttpServlet {
 			throws ServletException, IOException {
 		HttpSession session = request.getSession();
 		String userName = (String) session.getAttribute("user");
-		String fileName = request.getParameter("filename");
+		String filePath = request.getParameter("filename");
 		JSONObject jsonObject = new JSONObject();
 		String successState = "false", content = "";
-		File file = new File(defaultLocation + fileName);
+		File file = new File(defaultLocation + filePath);
+//		System.out.println(file);
 		String privilege = null;
 		if (file.exists()) {
 			content = Utilities.stringBuilder(new BufferedReader(new FileReader(file)));
-			privilege = ClientsInfoDao.checkLocation(ClientsInfoDao.getFileId(fileName), userName);
+			privilege = ClientsInfoDao.checkLocation(ClientsInfoDao.getFileId(filePath), userName);
+			System.out.println("privilege: " + privilege);
 			if (privilege != null) {
 				privilege = privilege.substring(0, privilege.indexOf('+'));
 			}
 			successState = "true";
 		}
+//		System.out.println(successState + content + privilege);
 		jsonObject.put("success", successState);
 		jsonObject.put("content", content);
 		jsonObject.put("privilege", privilege);

@@ -9,7 +9,7 @@ import java.sql.Statement;
 
 public class LoginDao {
 	static Connection con;
-	
+
 	static {
 		try {
 			Class.forName("com.mysql.jdbc.Driver");
@@ -25,7 +25,8 @@ public class LoginDao {
 		ResultSet rs = null;
 		try {
 			stmt = con.createStatement();
-			rs = stmt.executeQuery("select * from clients_info");
+			rs = stmt.executeQuery(
+					"select * from clients_info where name='" + name + "' and password='" + password + "'");
 			while (rs.next()) {
 				if (rs.getString(2).equals(name) && rs.getString(3).equals(password)) {
 					return true;
@@ -49,13 +50,43 @@ public class LoginDao {
 		return false;
 	}
 
-	public static void addClient(String name, String password) {
+	public static boolean checkClientName(String name) {
+		Statement stmt = null;
+		ResultSet rs = null;
+		try {
+			stmt = con.createStatement();
+			rs = stmt.executeQuery("select * from clients_info where name='" + name + "'");
+			if (rs.next()) {
+				return true;
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		} finally {
+			try {
+				if (rs != null) {
+					rs.close();
+				}
+			} catch (Exception e) {
+			}
+			try {
+				if (stmt != null)
+					stmt.close();
+			} catch (Exception e) {
+			}
+		}
+		return false;
+	}
+
+	public static boolean addClient(String name, String password) {
 		PreparedStatement stmt = null;
 		try {
-			stmt = con.prepareStatement("insert into clients_info values(null,?,?)");
-			stmt.setString(1, name);
-			stmt.setString(2, password);
-			stmt.execute();
+			if (!checkClientName(name)) {
+				stmt = con.prepareStatement("insert into clients_info values(null,?,?)");
+				stmt.setString(1, name);
+				stmt.setString(2, password);
+				stmt.execute();
+				return true;
+			}
 		} catch (SQLException e) {
 			e.printStackTrace();
 		} finally {
@@ -65,5 +96,6 @@ public class LoginDao {
 			} catch (Exception e) {
 			}
 		}
+		return false;
 	}
 }

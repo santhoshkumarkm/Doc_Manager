@@ -26,13 +26,14 @@ public class LogoutController extends HttpServlet {
 	protected void doGet(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
 		HttpSession session = request.getSession();
-		session.removeAttribute("user");
-		if (session.getAttribute("privilege") != null) {
-			session.removeAttribute("privilege");
-		}
-		session.invalidate();
 		JSONObject jsonObject = new JSONObject();
-		jsonObject.put("success", "true");
+		if (session.getAttribute("user") != null) {
+			session.removeAttribute("user");
+			session.invalidate();
+			jsonObject.put("success", "true");
+		} else {
+			jsonObject.put("success", "logout");
+		}
 		response.setContentType("application/json");
 		PrintWriter out = response.getWriter();
 		out.print(jsonObject);

@@ -41,7 +41,6 @@ public class AddWordsTask extends TimerTask {
 	@Override
 	public void run() {
 		try {
-//		System.out.println("Listener running");
 			String filePath = null;
 			String fileContent = null;
 			if (editList.getFileNames().size() != 0) {
@@ -49,20 +48,11 @@ public class AddWordsTask extends TimerTask {
 				tempList.putAll(editList.getFileNames());
 				for (Map.Entry<String, LinkedHashMap<Integer, String>[]> entry : tempList.entrySet()) {
 					filePath = entry.getKey();
-//					System.out.println("file path: " + filePath);
 					LinkedHashMap<Integer, String>[] twoLists = entry.getValue();
-//					File currentFile = new File(
-//							"/Users/santhosh-pt2425/Documents/Cloud_Storage_Application/Clients/"
-//									+ filePath.substring(filePath.indexOf('+') + 1));
-//					if (!currentFile.exists()) {
-//						continue;
-//					}
-//						fileContent = Utilities.stringBuilder(new BufferedReader(new FileReader(currentFile)));
 					if (twoLists[0].size() > 0) {
 						hashMapUtil.removeWords(Long.valueOf(filePath.substring(0, filePath.indexOf('+'))),
 								twoLists[0]);
 					}
-//					System.out.println(twoLists[1]);
 					if (twoLists[1] != null) {
 						hashMapUtil.editWords(Long.valueOf(filePath.substring(0, filePath.indexOf('+'))),
 								twoLists[1]);
@@ -78,8 +68,6 @@ public class AddWordsTask extends TimerTask {
 					filePath = fileList.getFileNames().iterator().next();
 					fileContent = Utilities.stringBuilder(new BufferedReader(new FileReader(new File(
 							"/Users/santhosh-pt2425/Documents/Cloud_Storage_Application/Clients/" + filePath))));
-//				System.out.println("file path: " + filePath);
-					System.out.println("file content: " + System.currentTimeMillis());
 					hashMapUtil.addWords(filePath, fileContent);
 					fileList.getFileNames().remove(filePath);
 					Utilities.writeFile(file, fileList);
@@ -88,7 +76,7 @@ public class AddWordsTask extends TimerTask {
 				}
 			}
 		} catch (Exception ee) {
-			System.out.println("EEEEEEEEE ------ " + ee);
+			System.out.println("Catch ------ " + ee);
 			ee.printStackTrace();
 		}
 	}

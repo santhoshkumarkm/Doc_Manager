@@ -45,27 +45,27 @@ public class SearchController extends HttpServlet {
 		BufferedReader reader = new BufferedReader(new InputStreamReader(request.getInputStream()));
 		JSONObject jsonObject = new JSONObject();
 		String words = Utilities.stringBuilder(reader);
-		System.out.println("words: " + words);
+//		System.out.println("words: " + words);
 		LinkedHashMap<String, LinkedHashMap<Integer, ArrayList<Integer>>> wordsDetailMap = AddWordsTask.getHashMapUtil()
 				.findWord(words.split("\\W+"));
 		JSONArray jsonFinalArray = new JSONArray();
-		System.out.println("before word detail: " + wordsDetailMap);
-		if (wordsDetailMap == null || wordsDetailMap.size() ==0) {
+//		System.out.println("before word detail: " + wordsDetailMap);
+		if (wordsDetailMap == null || wordsDetailMap.size() == 0) {
 			wordsDetailMap = AddWordsTask.getHashMapUtil().editDistance(words.split("\\W+"));
-			if (wordsDetailMap != null && wordsDetailMap.size() >0) {
-				JSONObject tempJsonObject = new JSONObject();				
+			if (wordsDetailMap != null && wordsDetailMap.size() > 0) {
+				JSONObject tempJsonObject = new JSONObject();
 				tempJsonObject.put("editDistance", null);
 				jsonFinalArray.add(tempJsonObject);
 			}
 		}
-		System.out.println("after word detail: " + wordsDetailMap);
-		if (wordsDetailMap != null) {
+//		System.out.println("after word detail: " + wordsDetailMap);
+		if (wordsDetailMap != null && wordsDetailMap.size() > 0) {
 			for (Map.Entry<String, LinkedHashMap<Integer, ArrayList<Integer>>> entry : wordsDetailMap.entrySet()) {
 				JSONArray jsonArray = ClientsInfoDao.search(entry.getValue(), user);
 				if (jsonArray.size() > 0) {
 					jsonObject.put(entry.getKey(), jsonArray);
 				}
-				System.out.println(jsonObject);
+//				System.out.println(jsonObject);
 			}
 		}
 		if (jsonObject.size() > 0) {
@@ -84,7 +84,7 @@ public class SearchController extends HttpServlet {
 				jsonFinalArray.add(jsonObject);
 			}
 		}
-		System.out.println("array:" + jsonFinalArray);
+//		System.out.println("array:" + jsonFinalArray);
 		response.setContentType("application/json");
 		PrintWriter out = response.getWriter();
 		out.print(jsonFinalArray);

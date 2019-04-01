@@ -156,8 +156,4 @@ public class Utilities {
 		twoLists[1] = updatedList;
 		return twoLists;
 	}
-
-	public static void main(String[] args) {
-		System.out.println(Arrays.toString(Utilities.getEditedWords("hello", "hi")));
-	}
 }

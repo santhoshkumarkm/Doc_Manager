@@ -17,10 +17,11 @@ import javax.servlet.http.HttpSession;
 
 import org.json.simple.JSONObject;
 
-@WebFilter(urlPatterns = { "/SharedUserListController", "/AllUserListController", "/ChangePrivilegeController",
-		"/DeleteFileController", "/GoBackController", "/NewFileController", "/NewFolderController",
-		"/OpenFileController", "/SharedUserListController", "/ShareFileController", "/SignUpController",
-		"/UploadFileController", "/ViewFolderController", "/ViewFolderForLocationController", "/ViewShareController" })
+@WebFilter(urlPatterns = { "/user/owner", "/SharedUserListController", "/AllUserListController",
+		"/ChangePrivilegeController", "/DeleteFileController", "/GoBackController", "/NewFileController",
+		"/NewFolderController", "/OpenFileController", "/SharedUserListController", "/ShareFileController",
+		"/SignUpController", "/UploadFileController", "/ViewFolderController", "/ViewFolderForLocationController",
+		"/ViewShareController" })
 public class AuthenticationFilter implements Filter {
 
 	public void init(FilterConfig arg0) throws ServletException {

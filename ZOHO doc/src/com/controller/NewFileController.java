@@ -39,25 +39,31 @@ public class NewFileController extends HttpServlet {
 		HttpSession session = request.getSession();
 		String sessionUser = (String) session.getAttribute("user");
 		BufferedReader reader = new BufferedReader(new InputStreamReader(request.getInputStream()));
-		String fileName = request.getParameter("filename");
+//		String fileName = request.getParameter("filename");
 		String mode = request.getParameter("mode");
 		String text = Utilities.stringBuilder(reader);
-		String location = request.getParameter("location") + "/" + fileName;
+		String location = request.getParameter("filename");
 		JSONObject jsonObject = new JSONObject();
 		String successState = "false";
 		File file = new File(defaultLocation + location);
 		boolean flag = false;
-		String checkLocation = location.substring(0, location.indexOf('/'));
-		if (checkLocation.equals(sessionUser)) {
+		if (location.startsWith(sessionUser)) {
 			flag = true;
 		} else {
-			long fileId = ClientsInfoDao.getFileId(request.getParameter("location"));
+			long fileId = 0;
+			if (mode.equals("new")) {
+				fileId = ClientsInfoDao.getFileId(location.substring(0, location.lastIndexOf('/')));
+			} else {
+				fileId = ClientsInfoDao.getFileId(location);
+			}
+//			System.out.println(fileId+ sessionUser);
 			String privilegeInfo = ClientsInfoDao.checkLocation(fileId, sessionUser);
-			if (privilegeInfo.substring(0, privilegeInfo.indexOf('+')).equals("write")) {
+//			System.out.println("privilege:" + privilegeInfo);
+			if (privilegeInfo != null && privilegeInfo.substring(0, privilegeInfo.indexOf('+')).equals("write")) {
 				flag = true;
 			}
 		}
-		System.out.println(file);
+//		System.out.println(file);
 		if (flag) {
 			if (!file.exists() && mode.equals("new")) {
 				file.createNewFile();
@@ -70,7 +76,7 @@ public class NewFileController extends HttpServlet {
 			} else if (file.exists() && mode.equals("edit")) {
 				LinkedHashMap<Integer, String>[] twoLists = Utilities
 						.getEditedWords(Utilities.stringBuilder(new BufferedReader(new FileReader(file))), text);
-				System.out.println(Arrays.toString(twoLists));
+//				System.out.println(Arrays.toString(twoLists));
 				AddWordsTask.getEditList().addFileName(ClientsInfoDao.getFileId(location) + "+" + location, twoLists);
 				file.delete();
 				file.createNewFile();

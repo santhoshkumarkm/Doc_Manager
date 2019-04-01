@@ -41,9 +41,11 @@ public class GoBackController extends HttpServlet {
 			} else {
 				prevDir = currentDir.substring(0, currentDir.lastIndexOf('/'));
 				String sharedUser = currentDir.substring(0, currentDir.indexOf('/'));
-				access = ClientsInfoDao.checkAccess(prevDir, rootUser, sharedUser);
+				access = ClientsInfoDao.checkAccess(prevDir, rootUser);
+//				System.out.println("access: "+ access);
 				if (access.equals("denied")) {
 					prevDir = sharedUser;
+//					System.out.println(prevDir);
 					access = "default";
 				}
 			}

@@ -75,15 +75,15 @@ public class Trie implements Serializable {
 			pairs.add(key);
 		}
 //		for (int i = 0; i < trieNode.nodeArray.size(); i++) {
-			
+
 //			System.out.println(
 //					getSuggestionsMax(new LinkedList<String>(), String.valueOf(first), trieNode, key.length() + 2));
-			pairs.addAll(
-					getSuggestionsMax(new LinkedList<String>(), String.valueOf(first), trieNode, key.length() + 2));
+		pairs.addAll(getSuggestionsMax(new LinkedList<String>(), String.valueOf(first), trieNode, key.length() + 2));
 //		}
 		LinkedList<String> foundWords = new LinkedList<String>();
 		for (String predictedWord : pairs) {
-			if (Utilities.editDistance(key, predictedWord, key.length(), predictedWord.length()) <= 3) {
+			if (Utilities.editDistance(key, predictedWord, key.length(),
+					predictedWord.length()) <= ((key.length() <= 5) ? 2 : 3)) {
 				foundWords.add(predictedWord);
 			}
 		}
@@ -113,7 +113,7 @@ public class Trie implements Serializable {
 			pairs.add(key);
 		}
 //		for (int i = 0; i < trieNode.nodeArray.size(); i++) {
-			pairs.addAll(getSuggestions(new LinkedList<String>(), key, trieNode));
+		pairs.addAll(getSuggestions(new LinkedList<String>(), key, trieNode));
 //		}
 		return pairs;
 	}
@@ -151,42 +151,6 @@ public class Trie implements Serializable {
 			word = word.substring(0, word.length() - 1);
 		}
 		return pairs;
-	}
-
-	public static void main(String[] args) {
-		Trie trie = new Trie();
-		LinkedList<Integer> positions = new LinkedList<Integer>();
-		positions.add(1);
-		positions.add(2);
-		positions.add(3);
-		positions.add(4);
-		Map<Integer, LinkedList<Integer>> infoMap = new LinkedHashMap<Integer, LinkedList<Integer>>();
-		infoMap.put(1, positions);
-		WordUtil wordUtil = new WordUtil();
-		wordUtil.setInfoMap(infoMap);
-
-		LinkedList<Integer> positions2 = new LinkedList<Integer>();
-		positions2.add(1);
-		positions2.add(2);
-		Map<Integer, LinkedList<Integer>> infoMap2 = new LinkedHashMap<Integer, LinkedList<Integer>>();
-		infoMap2.put(1, positions2);
-		WordUtil wordUtil2 = new WordUtil();
-		wordUtil2.setInfoMap(infoMap2);
-
-		LinkedList<Integer> positions3 = new LinkedList<Integer>();
-		positions3.add(1);
-		positions3.add(2);
-		positions3.add(3);
-		positions3.add(4);
-		Map<Integer, LinkedList<Integer>> infoMap3 = new LinkedHashMap<Integer, LinkedList<Integer>>();
-		infoMap3.put(1, positions3);
-		WordUtil wordUtil3 = new WordUtil();
-		wordUtil3.setInfoMap(infoMap3);
-
-		trie.insert("newfile1", wordUtil2);
-//		trie.remove("newer", 1, 1);
-//		trie.remove("newest", 1, 2);
-		System.out.println(trie.editDistance("newfile2"));
 	}
 
 	public WordUtil getWordUtil(String key) {

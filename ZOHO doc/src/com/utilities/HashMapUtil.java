@@ -16,7 +16,7 @@ public class HashMapUtil {
 	Trie trie;
 
 	public void setTrie() {
-		System.out.println("constructor");
+//		System.out.println("constructor");
 		if (trieFile.exists()) {
 			try {
 				trie = (Trie) Utilities.readFile(trieFile);
@@ -41,35 +41,24 @@ public class HashMapUtil {
 	}
 
 	public void addWords(String filePath, String fileContent) {
-		long currentTime = System.currentTimeMillis();
 		long fileId = ClientsInfoDao.getFileId(filePath);
-		long c = System.currentTimeMillis();
-		System.out.println("before split --- ");
 		String[] words = fileContent.split("\\W+");
-		System.out.println("aftewr split --- " + (System.currentTimeMillis() - c));
 		for (int i = 0; i < words.length; i++) {
 			addHashMapEntry(i, words[i].trim(), (int) fileId);
 		}
-		System.out.println("Time taken for addWords - " + (System.currentTimeMillis() - currentTime));
 		saveTrie();
 	}
 
 	private void addHashMapEntry(int position, String word, int fileId) {
 		WordUtil wordUtil;
 		if ((wordUtil = trie.getWordUtil(word)) != null) {
-			for (int i = 0; i < wordUtil.getInfoMap().size(); i++) {
 				if (wordUtil.getInfoMap().containsKey(fileId)) {
-//					if (!wordUtil.getInfoMap().get(fileId).contains(position)) {
 					wordUtil.getInfoMap().get(fileId).add(position);
-					break;
-					// }
 				} else {
 					LinkedList<Integer> list = new LinkedList<Integer>();
 					list.add(position);
 					wordUtil.getInfoMap().put(fileId, list);
-					break;
 				}
-			}
 		} else {
 			wordUtil = new WordUtil();
 			LinkedList<Integer> list = new LinkedList<Integer>();
@@ -83,34 +72,34 @@ public class HashMapUtil {
 //	LinkedHashMap<String, LinkedHashMap<Integer, ArrayList<Integer>>> wordsDeatilMap = new LinkedHashMap<String, LinkedHashMap<Integer, ArrayList<Integer>>>();
 
 	public LinkedHashMap<String, LinkedHashMap<Integer, ArrayList<Integer>>> findWord(String[] words) {
-		System.out.println("Trie: " + trie);
+//		System.out.println("Trie: " + trie);
 		LinkedList<String> foundWords = trie.searchPrefix(words[words.length - 1]);
 		LinkedHashMap<String, LinkedHashMap<Integer, ArrayList<Integer>>> map = new LinkedHashMap<String, LinkedHashMap<Integer, ArrayList<Integer>>>();
 		String sentence = "";
 		for (int i = 0; i < words.length - 1; i++) {
 			sentence += words[i] + " ";
 		}
-		System.out.println("found :" + foundWords);
+//		System.out.println("found :" + foundWords);
 		if (foundWords == null) {
 			return null;
 		}
 		for (String word : foundWords) {
-			System.out.println("word: " + word);
+//			System.out.println("word: " + word);
 			words[words.length - 1] = word;
 			fileAndPosition = new LinkedHashMap<Integer, ArrayList<Integer>>();
 			if (findMultiWordsImpl(false, words, 0, new ArrayList<Integer>(), new ArrayList<Integer>())) {
 				sentence += word;
-				map.put(sentence, (LinkedHashMap<Integer, ArrayList<Integer>>) fileAndPosition.clone());
+				map.put(sentence, fileAndPosition);
 				sentence = sentence.substring(0, sentence.length() - word.length());
 			}
 		}
 		return map;
 	}
-	
+
 	public LinkedHashMap<String, LinkedHashMap<Integer, ArrayList<Integer>>> editDistance(String[] words) {
-		System.out.println("Trie: " + trie);
+//		System.out.println("Trie: " + trie);
 		LinkedList<String> foundWords = trie.editDistance(words[words.length - 1]);
-		System.out.println("found :" + foundWords);
+//		System.out.println("found :" + foundWords);
 		LinkedHashMap<String, LinkedHashMap<Integer, ArrayList<Integer>>> map = new LinkedHashMap<String, LinkedHashMap<Integer, ArrayList<Integer>>>();
 		String sentence = "";
 		if (foundWords == null) {
@@ -120,12 +109,12 @@ public class HashMapUtil {
 			sentence += words[i] + " ";
 		}
 		for (String word : foundWords) {
-			System.out.println("word: " + word);
+//			System.out.println("word: " + word);
 			words[words.length - 1] = word;
 			fileAndPosition = new LinkedHashMap<Integer, ArrayList<Integer>>();
 			if (findMultiWordsImpl(false, words, 0, new ArrayList<Integer>(), new ArrayList<Integer>())) {
 				sentence += word;
-				map.put(sentence, (LinkedHashMap<Integer, ArrayList<Integer>>) fileAndPosition.clone());
+				map.put(sentence, fileAndPosition);
 				sentence = sentence.substring(0, sentence.length() - word.length());
 			}
 		}
@@ -135,21 +124,23 @@ public class HashMapUtil {
 	private boolean findMultiWordsImpl(boolean flag, String[] words, int index, ArrayList<Integer> tempPositions,
 			ArrayList<Integer> tempFiles) {
 		WordUtil wordUtil = trie.getWordUtil(words[index]);
-		System.out.println("word: " + words[index] + " word util: " + wordUtil);
+//		System.out.println("word: " + words[index] + " word util: " + wordUtil);
 		if (wordUtil == null) {
 			return false;
 		}
+		LinkedHashMap<Integer, ArrayList<Integer>> fileAndPositionCopy = null;
 		if (index == 0) {
+			fileAndPositionCopy = new LinkedHashMap<Integer, ArrayList<Integer>>();
 			for (Map.Entry<Integer, LinkedList<Integer>> entry : wordUtil.getInfoMap().entrySet()) {
 				ArrayList<Integer> tempList = new ArrayList<Integer>();
 				tempList.addAll(entry.getValue());
-				fileAndPosition.put(entry.getKey(), tempList);
+				fileAndPositionCopy.put(entry.getKey(), tempList);
 			}
 		} else {
-			LinkedHashMap<Integer, ArrayList<Integer>> fileAndPositionCopy = new LinkedHashMap<Integer, ArrayList<Integer>>();
-			fileAndPositionCopy = (LinkedHashMap<Integer, ArrayList<Integer>>) fileAndPosition.clone();
-			fileAndPosition.clear();
-			for (Map.Entry<Integer, ArrayList<Integer>> entry : fileAndPositionCopy.entrySet()) {
+			fileAndPositionCopy = new LinkedHashMap<Integer, ArrayList<Integer>>();
+//			fileAndPositionCopy = (LinkedHashMap<Integer, ArrayList<Integer>>) fileAndPosition.clone();
+//			fileAndPosition.clear();
+			for (Map.Entry<Integer, ArrayList<Integer>> entry : fileAndPosition.entrySet()) {
 				tempPositions.clear();
 				tempFiles.clear();
 
@@ -163,15 +154,22 @@ public class HashMapUtil {
 						}
 					}
 					if (tempPosListConfirm.size() > 0) {
-						fileAndPosition.put(entry.getKey(), tempPosListConfirm);
+						fileAndPositionCopy.put(entry.getKey(), tempPosListConfirm);
 					}
 				}
 			}
 		}
-		if (fileAndPosition.size() > 0 && index + 1 != words.length) {
+		if (fileAndPositionCopy.size() > 0 && index + 1 != words.length) {
+			if (index != 0) {
+				fileAndPosition.clear();
+				fileAndPosition = fileAndPositionCopy;
+			}
 			flag = findMultiWordsImpl(flag, words, index + 1, tempPositions, tempFiles);
-		} else if (fileAndPosition.size() > 0 && index + 1 == words.length)
+		} else if (fileAndPositionCopy.size() > 0 && index + 1 == words.length) {
+			fileAndPosition.clear();
+			fileAndPosition = fileAndPositionCopy;
 			return true;
+		}
 		return flag;
 	}
 

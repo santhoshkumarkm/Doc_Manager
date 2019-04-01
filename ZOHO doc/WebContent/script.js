@@ -6,19 +6,41 @@ var allUserList = [];
 
 var commonWords = ["the", "and", "that", "have", "for", "not", "with", "you", "this", "but", "his", "from", "they", "her", "she", "will", "would", "there", "their", "your", "could", "also"];
 
-var folderImg = document.createElement('img');
-folderImg.setAttribute('src', '../images/folder.png');
-folderImg.setAttribute('alt', 'Folder Image');
-folderImg.setAttribute('class', 'icon');
-var folderImgDiv = document.createElement('div');
-folderImgDiv.appendChild(folderImg);
+function checkUser(){
+	var userName = document.getElementById("userName").value;
+	var xmlhttp = new XMLHttpRequest();
+	xmlhttp.onreadystatechange = function() {
+		if (this.readyState == 4 && this.status == 200) {
+			var responseObj = JSON.parse(this.responseText);
+			if(responseObj.success == "true"){
+				document.getElementById("successCheck").innerHTML = " (Available)"
+			} else {
+				document.getElementById("successCheck").innerHTML = " (User Name not available)"
+			}
+		}
+	};
+	xmlhttp.open("GET", "../DuplicateUserController?username="+userName, true);
+	xmlhttp.send();
+}
 
-var fileImg = document.createElement('img');
-fileImg.setAttribute('src', '../images/file.png');
-fileImg.setAttribute('alt', 'File Image');
-fileImg.setAttribute('class', 'icon');
-var fileImgDiv = document.createElement('div');
-fileImgDiv.appendChild(fileImg);
+function submitSignUpForm(){
+	var password = document.getElementById("password").value;
+	var confirmPassword = document.getElementById("confirmPassword").value;
+	if(document.getElementById("userName").value.length >=3 && document.getElementById("successCheck").innerHTML== " (Available)" && password.length >= 6 && password == confirmPassword){		
+		document.getElementById("signUpForm").submit();
+	} else{
+		alert("Please fill details correctly");
+	}
+}
+
+function submitLoginForm(){
+	var password = document.getElementById("password").value;
+	if(document.getElementById("username").value.length >=3 && password.length >= 6 ){		
+		document.getElementById("loginForm").submit();
+	} else{
+		alert("Please fill details correctly");
+	}
+}
 
 function getSharedUsers(rootUser) {
 	var xmlhttp = new XMLHttpRequest();
@@ -45,6 +67,12 @@ function userListTraverse(value) {
 	user.addEventListener('click', function(element) {
 		viewFiles(user.id, "read");
 	});
+	var folderImg = document.createElement('img');
+	folderImg.setAttribute('src', '../images/folder.png');
+	folderImg.setAttribute('alt', 'Folder Image');
+	folderImg.setAttribute('class', 'icon');
+	var folderImgDiv = document.createElement('div');
+	folderImgDiv.appendChild(folderImg);
 	user.appendChild(folderImgDiv);
 	user.appendChild(textDiv);
 	document.getElementById("topbar").appendChild(user);
@@ -54,7 +82,7 @@ function viewFiles(user, privilege="default") {
 	currentDir = user;
 	currentPrivilege = privilege;
 	var flag = false;
-	if(location.hash.substring(1) == user){
+	if(decodeURI(location.hash).substring(1) == user){
 		flag = true;
 	}
 	location.hash = user;
@@ -72,13 +100,13 @@ function setOwner(user){
 		logout();
 	}
 	owner = user;
-	var currentLocation = location.hash.substring(1);
+	var currentLocation = decodeURI(location.hash).substring(1);
 	var xmlhttp = new XMLHttpRequest();
 	xmlhttp.onreadystatechange = function() {
 		if (this.readyState == 4 && this.status == 200) {
 			var successCheck = JSON.parse(this.responseText);
 			if(successCheck.success == "true"){
-				if(location.hash != ""){
+				if(decodeURI(location.hash) != ""){
 					onHashChange();
 						viewFiles(currentLocation, successCheck.privilege);
 				}
@@ -147,17 +175,12 @@ function goBack() {
 		if (this.readyState == 4 && this.status == 200) {
 			var accessCheck = JSON.parse(this.responseText);
 			if (accessCheck.access != "denied") {
-//				alert(accessCheck.prevLocation+"@"+ accessCheck.access)
+// alert(accessCheck.prevLocation+"@"+ accessCheck.access)
+				currentPrivilege = accessCheck.access;
 				viewFiles(accessCheck.prevLocation, accessCheck.access);
 			}
 		}
 	};
-//	var prevLocation;
-//	if(location.hash.lastIndexOf('/') != -1){
-//		location.hash = location.hash.substring(1,location.hash.lastIndexOf('/'));
-//	} else {
-//		location.hash = location.hash.substring(1);
-//	}
 	xmlhttp.open("GET", "../GoBackController?location=" + location.hash.substring(1), true);
 	xmlhttp.send();
 }
@@ -252,7 +275,7 @@ function deleteFile() {
 			}
 		}
 	};
-	xmlhttp.open("GET", "../DeleteFileController?location=" + selectedButton,
+	xmlhttp.open("POST", "../DeleteFileController?location=" + selectedButton,
 			true);
 	xmlhttp.send();
 }
@@ -266,6 +289,10 @@ function newFolderHandler() {
 	var folderName = document.getElementById("foldername").value;
 	if(folderName == ""){
 		alert("Name Empty");
+		return;
+	}
+	if(folderName.indexOf('/') != -1){
+		alert("Invalid name");
 		return;
 	}
 	var xmlhttp = new XMLHttpRequest();
@@ -282,7 +309,7 @@ function newFolderHandler() {
 			}
 		}
 	};
-	xmlhttp.open("GET", "../NewFolderController?location=" + currentDir
+	xmlhttp.open("POST", "../NewFolderController?location=" + location.hash.substring(1)
 			+ "&foldername=" + folderName, true);
 	xmlhttp.send();
 }
@@ -299,9 +326,13 @@ function newFileHandler() {
 		alert("Name Empty");
 		return;
 	}
+	if(fileName.indexOf('/') != -1){
+		alert("Invalid name");
+		return;
+	}
 	closeNewFileForm();
 
-	document.getElementById("displayfilename").innerHTML = fileName + ".txt";
+	document.getElementById("displayfilename").innerHTML = decodeURI(location.hash).substring(1)+"/"+fileName + ".txt";
 	document.getElementById("editor").style.display = "block";
 	document.getElementById("savebutton").style.display = "inline-block";
 	document.getElementById("editbutton").style.display = "none";
@@ -312,7 +343,7 @@ function submitFile() {
 	var text = document.getElementById("textarea").value;
 	var xmlhttp = new XMLHttpRequest();
 	fileName = document.getElementById("displayfilename").innerHTML;
-	fileName = fileName.substring(fileName.lastIndexOf('/'), fileName.length);
+// fileName = fileName.substring(fileName.lastIndexOf('/'), fileName.length);
 	xmlhttp.onreadystatechange = function() {
 		if (this.readyState == 4 && this.status == 200) {
 			var successCheck = JSON.parse(this.responseText);
@@ -327,10 +358,10 @@ function submitFile() {
 		}
 	};
 	if (document.getElementById("editbutton").style.display == "inline-block") {
-		xmlhttp.open("POST", "../NewFileController?location=" + currentDir
+		xmlhttp.open("POST", "../NewFileController?location=" + location.hash.substring(1)
 				+ "&filename=" + fileName + "&mode=edit", true);
 	} else {
-		xmlhttp.open("POST", "../NewFileController?location=" + currentDir
+		xmlhttp.open("POST", "../NewFileController?location=" + location.hash.substring(1)
 				+ "&filename=" + fileName + "&mode=new", true);
 	}
 	xmlhttp.send(text);
@@ -347,6 +378,7 @@ function openFile(fileName) {
 				document.getElementById("savebutton").style.display = "none";
 				if (successCheck.privilege == "read") {
 					fileName = fileName + " (Read only mode)";
+					document.getElementById("editbutton").style.display = "none";
 				} else {
 					document.getElementById("editbutton").style.display = "inline-block";
 					document.getElementById("editbutton").style.opacity = "1";
@@ -360,7 +392,7 @@ function openFile(fileName) {
 			}
 		}
 	};
-	xmlhttp.open("GET", "../OpenFileController?location=" + currentDir
+	xmlhttp.open("GET", "../OpenFileController?location=" + location.hash.substring(1)
 			+ "&filename=" + fileName, true);
 	xmlhttp.send();
 }
@@ -526,7 +558,7 @@ function removeShare(sharedUser) {
 			}
 		}
 	};
-	xmlhttp.open("GET", "../RemoveShareController?user=" + sharedUser
+	xmlhttp.open("POST", "../RemoveShareController?user=" + sharedUser
 			+ "&location=" + selectedButton, true);
 	xmlhttp.send();
 }
@@ -679,10 +711,10 @@ function logout() {
 function onHashChange() {
 	window.scrollTo(0, 0);
 	var xmlhttp = new XMLHttpRequest();
-	var hashValue = window.location.hash.substring(1);
+	var hashValue = decodeURI(location.hash).substring(1);
 	xmlhttp.onreadystatechange = function() {
 		if (this.readyState == 4 && this.status == 200) {
-			document.getElementById("dispdir").innerHTML = hashValue;
+			document.getElementById("dispdir").innerHTML = hashValue;	
 			if(hashValue.indexOf('/')!=-1){
 				document.getElementById(hashValue.substring(0,hashValue.indexOf('/'))).style.opacity = "1";
 			} else {
@@ -694,6 +726,7 @@ function onHashChange() {
 			}
 			var parsedJsonObj = JSON.parse(this.responseText);
 			if (parsedJsonObj.success == "ERROR") {
+				alert("Folder not available");
 				var temp = hashValue.substring(0,hashValue.lastIndexOf('/'));
 				location.hash = temp.substring(0,temp.lastIndexOf('/'));
 				goBack();
