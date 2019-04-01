@@ -24,8 +24,9 @@
 		<form id="loginForm" action="../LoginController" method="post">
 			Username: <input id="username" type="text" name="name" /><br /> <br />
 			Password: <input id="password" type="password" name="password" /><br />
-			<br /> <input type="button" id="bigblackbutton" value="Login"
-				onclick="submitLoginForm()" />
+			<br /> <input type="button" class="bigblackbutton" value="Login"
+				onclick="submitLoginForm()" /><br /> <br /><input type="button"
+				class="bigblackbutton" value="Back" onclick="window.location='../index.jsp';"/>
 		</form>
 	</div>
 </body>

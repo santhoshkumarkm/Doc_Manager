@@ -43,10 +43,12 @@ public class ValidateController extends HttpServlet {
 			} else {
 				long fileId = ClientsInfoDao.getFileId(location);
 				String privilegeInfo = ClientsInfoDao.checkLocation(fileId, sessionUser);
-				privilegeInfo = privilegeInfo.substring(0, privilegeInfo.indexOf('+'));
-				if (privilegeInfo.equals("write") || privilegeInfo.equals("read")) {
-					privilege = privilegeInfo;
-					successState = "true";
+				if (privilegeInfo != null) {
+					privilegeInfo = privilegeInfo.substring(0, privilegeInfo.indexOf('+'));
+					if (privilegeInfo.equals("write") || privilegeInfo.equals("read")) {
+						privilege = privilegeInfo;
+						successState = "true";
+					}
 				}
 			}
 		}

@@ -32,15 +32,6 @@
 		<url-pattern>/SignupController</url-pattern>
 	</servlet-mapping>
 
-	<servlet>
-		<servlet-name>NavigationController</servlet-name>
-		<servlet-class>com.controller.NavigationController</servlet-class>
-	</servlet>
-	<servlet-mapping>
-		<servlet-name>NavigationController</servlet-name>
-		<url-pattern>/NavigationController</url-pattern>
-	</servlet-mapping>
-
 	<listener>
 		<listener-class>com.listener.AppContextListener</listener-class>
 	</listener>

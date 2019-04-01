@@ -25,10 +25,12 @@
 			Username(unique): <input type="text" name="name" id="userName"
 				onblur="checkUser()" placeholder="Min 3 letters..." /><span
 				id="successCheck"></span><br /> <br /> Password: <input
-				id="password" type="password" name="password" placeholder="Min 6 letters..."/><br /> <br />
-			Confirm Password: <input type="password" id="confirmPassword"
-				name="confirmpassword" /><br /> <br /> <input type="button"
-				id="bigblackbutton" value="SignUp" onclick="submitSignUpForm()" />
+				id="password" type="password" name="password"
+				placeholder="Min 6 letters..." /><br /> <br /> Confirm Password: <input
+				type="password" id="confirmPassword" name="confirmpassword" /><br />
+			<br /> <input type="button" class="bigblackbutton" value="SignUp"
+				onclick="submitSignUpForm()" /> <br /><br /> <input type="button"
+				class="bigblackbutton" value="Back" onclick="window.location='../index.jsp';" />
 		</form>
 	</div>
 

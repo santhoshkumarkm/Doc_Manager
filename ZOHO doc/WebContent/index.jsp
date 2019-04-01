@@ -3,6 +3,7 @@
 <!DOCTYPE html>
 <html>
 <head>
+<link href="style.css" rel="stylesheet" type="text/css">
 <%
 	String user = (String) session.getAttribute("user");
 	if(user!=null){
@@ -15,15 +16,13 @@
 %>
 <meta charset="UTF-8">
 <title>Welcome</title>
-<script type="text/javascript" src="../script.js"></script>
-<link href="style.css" rel="stylesheet" type="text/css">
 </head>
 <body>
 	<h1 align="center">Welcome !!!</h1>
 	<div align="center">
-		<input type="button" id="bigblackbutton"
+		<input type="button" class="bigblackbutton"
 			onclick="location.href='login/login.jsp';" value="Login" /> <br />
-		<br /> <input type="button" id="bigblackbutton"
+		<br /> <input type="button" class="bigblackbutton"
 			onclick="location.href='login/signup.jsp';" value="SignUp" />
 	</div>
 </body>

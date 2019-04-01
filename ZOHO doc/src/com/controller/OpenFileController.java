@@ -1,8 +1,5 @@
 package com.controller;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.PrintWriter;
 
@@ -17,7 +14,7 @@ import javax.servlet.http.HttpSession;
 import org.json.simple.JSONObject;
 
 import com.dao.ClientsInfoDao;
-import com.utilities.Utilities;
+import com.utilities.FileOperations;
 
 @WebServlet("/OpenFileController")
 public class OpenFileController extends HttpServlet {
@@ -36,13 +33,11 @@ public class OpenFileController extends HttpServlet {
 		String filePath = request.getParameter("filename");
 		JSONObject jsonObject = new JSONObject();
 		String successState = "false", content = "";
-		File file = new File(defaultLocation + filePath);
-//		System.out.println(file);
+		FileOperations file = new FileOperations(filePath);
 		String privilege = null;
 		if (file.exists()) {
-			content = Utilities.stringBuilder(new BufferedReader(new FileReader(file)));
+			content = file.read();
 			privilege = ClientsInfoDao.checkLocation(ClientsInfoDao.getFileId(filePath), userName);
-			System.out.println("privilege: " + privilege);
 			if (privilege != null) {
 				privilege = privilege.substring(0, privilege.indexOf('+'));
 			}

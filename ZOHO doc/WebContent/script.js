@@ -6,16 +6,21 @@ var allUserList = [];
 
 var commonWords = ["the", "and", "that", "have", "for", "not", "with", "you", "this", "but", "his", "from", "they", "her", "she", "will", "would", "there", "their", "your", "could", "also"];
 
+
 function checkUser(){
 	var userName = document.getElementById("userName").value;
+	if(userName.indexOf('/') != -1){
+		document.getElementById("successCheck").innerHTML = " '/' cannot be used in user name"
+		return;
+	}
 	var xmlhttp = new XMLHttpRequest();
 	xmlhttp.onreadystatechange = function() {
 		if (this.readyState == 4 && this.status == 200) {
 			var responseObj = JSON.parse(this.responseText);
 			if(responseObj.success == "true"){
-				document.getElementById("successCheck").innerHTML = " (Available)"
+				document.getElementById("successCheck").innerHTML = " (Available)";
 			} else {
-				document.getElementById("successCheck").innerHTML = " (User Name not available)"
+				document.getElementById("successCheck").innerHTML = " (User Name not available)";
 			}
 		}
 	};
@@ -26,7 +31,8 @@ function checkUser(){
 function submitSignUpForm(){
 	var password = document.getElementById("password").value;
 	var confirmPassword = document.getElementById("confirmPassword").value;
-	if(document.getElementById("userName").value.length >=3 && document.getElementById("successCheck").innerHTML== " (Available)" && password.length >= 6 && password == confirmPassword){		
+	var userName = document.getElementById("userName").value;
+	if(userName.length >=3 && userName.indexOf('/') == -1 && document.getElementById("successCheck").innerHTML== " (Available)" && password.length >= 6 && password == confirmPassword){		
 		document.getElementById("signUpForm").submit();
 	} else{
 		alert("Please fill details correctly");
@@ -86,9 +92,6 @@ function viewFiles(user, privilege="default") {
 		flag = true;
 	}
 	location.hash = user;
-	for (var i = 0; i < allUserList.length; i++) {
-		document.getElementById(allUserList[i]).style.opacity = "0.5";
-	}
 	if(flag){
 		onHashChange();
 	}
@@ -195,7 +198,7 @@ function setBoxRightClick() {
 
 function buttonRightClick(event, id) {
 	closeAll();
-	if (currentPrivilege != "read" && currentPrivilege != "write") {
+	if (currentPrivilege == "owner"){
 		document.getElementById("selected").innerHTML = id.substring(id
 				.lastIndexOf('/') + 1);
 		selectedButton = id;
@@ -714,24 +717,29 @@ function onHashChange() {
 	var hashValue = decodeURI(location.hash).substring(1);
 	xmlhttp.onreadystatechange = function() {
 		if (this.readyState == 4 && this.status == 200) {
-			document.getElementById("dispdir").innerHTML = hashValue;	
-			if(hashValue.indexOf('/')!=-1){
-				document.getElementById(hashValue.substring(0,hashValue.indexOf('/'))).style.opacity = "1";
-			} else {
-				document.getElementById(hashValue).style.opacity = "1";
-			}
-			var myfolderlist = document.getElementById("myfolderlist");
-			while (myfolderlist.firstChild) {
-				myfolderlist.removeChild(myfolderlist.firstChild);
-			}
 			var parsedJsonObj = JSON.parse(this.responseText);
 			if (parsedJsonObj.success == "ERROR") {
 				alert("Folder not available");
 				var temp = hashValue.substring(0,hashValue.lastIndexOf('/'));
 				location.hash = temp.substring(0,temp.lastIndexOf('/'));
 				goBack();
-				
-			} else {				
+			} else if (parsedJsonObj.success == "DENIED") {
+				alert("Folder not accessible");
+				window.history.back();
+			} else {
+				document.getElementById("dispdir").innerHTML = hashValue;
+				for (var i = 0; i < allUserList.length; i++) {
+					document.getElementById(allUserList[i]).style.opacity = "0.5";
+				}
+				if(hashValue.indexOf('/')!=-1){
+					document.getElementById(hashValue.substring(0,hashValue.indexOf('/'))).style.opacity = "1";
+				} else {
+					document.getElementById(hashValue).style.opacity = "1";
+				}
+				var myfolderlist = document.getElementById("myfolderlist");
+				while (myfolderlist.firstChild) {
+					myfolderlist.removeChild(myfolderlist.firstChild);
+				}
 				for (x in parsedJsonObj) {
 					openFolder(x, parsedJsonObj[x]);
 				}

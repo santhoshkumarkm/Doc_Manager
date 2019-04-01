@@ -219,8 +219,7 @@ public class ClientsInfoDao {
 					+ "' and filelocation = '" + fileLocation + "'");
 			String filePrivilege = checkLocation(getFileId(location), user);
 			if (filePrivilege == null) {
-				System.out.println("null");
-				map.put("success", "ERROR");
+				map.put("success", "DENIED");
 				return map;
 			}
 			while (rs.next()) {

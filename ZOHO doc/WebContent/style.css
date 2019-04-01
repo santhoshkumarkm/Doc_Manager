@@ -1,6 +1,6 @@
 @charset "UTF-8";
 
-#bigblackbutton {
+.bigblackbutton {
 	-webkit-appearance: none;
 	background-color: black;
 	font-size: 20px;

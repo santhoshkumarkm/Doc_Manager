@@ -1,13 +1,9 @@
 package com.controller;
 
 import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
-import java.util.Arrays;
 import java.util.LinkedHashMap;
 
 import javax.servlet.ServletConfig;
@@ -22,6 +18,7 @@ import org.json.simple.JSONObject;
 
 import com.dao.ClientsInfoDao;
 import com.utilities.AddWordsTask;
+import com.utilities.FileOperations;
 import com.utilities.Utilities;
 
 @WebServlet("/NewFileController")
@@ -45,7 +42,7 @@ public class NewFileController extends HttpServlet {
 		String location = request.getParameter("filename");
 		JSONObject jsonObject = new JSONObject();
 		String successState = "false";
-		File file = new File(defaultLocation + location);
+		FileOperations file = new FileOperations(location);
 		boolean flag = false;
 		if (location.startsWith(sessionUser)) {
 			flag = true;
@@ -66,26 +63,19 @@ public class NewFileController extends HttpServlet {
 //		System.out.println(file);
 		if (flag) {
 			if (!file.exists() && mode.equals("new")) {
-				file.createNewFile();
-				FileWriter fw = new FileWriter(file);
-				fw.write(text);
-				fw.close();
 				ClientsInfoDao.insertFile(location);
-				successState = "true";
 				AddWordsTask.getFileList().addFileName(location);
 			} else if (file.exists() && mode.equals("edit")) {
 				LinkedHashMap<Integer, String>[] twoLists = Utilities
-						.getEditedWords(Utilities.stringBuilder(new BufferedReader(new FileReader(file))), text);
+						.getEditedWords(file.read(), text);
 //				System.out.println(Arrays.toString(twoLists));
 				AddWordsTask.getEditList().addFileName(ClientsInfoDao.getFileId(location) + "+" + location, twoLists);
 				file.delete();
-				file.createNewFile();
-				FileWriter fw = new FileWriter(file);
-				fw.write(text);
-				fw.close();
 				ClientsInfoDao.insertFile(location);
-				successState = "true";
 			}
+			file.create();
+			file.write(text);
+			successState = "true";
 		}
 		jsonObject.put("success", successState);
 		response.setContentType("application/json");

@@ -20,6 +20,7 @@ import org.json.simple.JSONObject;
 
 import com.dao.ClientsInfoDao;
 import com.utilities.AddWordsTask;
+import com.utilities.FileOperations;
 import com.utilities.Utilities;
 
 @WebServlet("/DeleteFileController")
@@ -37,20 +38,19 @@ public class DeleteFileController extends HttpServlet {
 		HttpSession session = request.getSession();
 		String sessionUser = (String) session.getAttribute("user");
 		String location = request.getParameter("location");
-		File file = new File(defaultLocation + "/" + location);
+		FileOperations file = new FileOperations(location);
 		JSONObject jsonObject = new JSONObject();
 		String successState = "ERROR";
 		if (location.startsWith(sessionUser) && file.exists()) {
 			if (location.endsWith(".txt")) {
 				LinkedHashMap<Integer, String>[] twoLists = Utilities
-						.getEditedWords(Utilities.stringBuilder(new BufferedReader(new FileReader(file))), "");
+						.getEditedWords(file.read(), "");
 				AddWordsTask.getEditList().addFileName(ClientsInfoDao.getFileId(location) + "+" + location, twoLists);
 				ClientsInfoDao.deleteFile(location);
 				successState = "true";
 			} else {
 				LinkedList<String> fileNames = ClientsInfoDao.getFilesInDirectory(location);
 //				System.out.println("file names: " + fileNames);
-				int i=0;
 				for (String filePath : fileNames) {
 					File subFile = new File(defaultLocation + "/" + filePath);
 //					System.out.println("file: " + subFile);
@@ -63,25 +63,13 @@ public class DeleteFileController extends HttpServlet {
 //				System.out.println("file: " + file);
 				successState = "true";
 			}
-			recursiveDelete(file);
+			file.delete();
 		}
 		jsonObject.put("success", successState);
 		response.setContentType("application/json");
 		PrintWriter out = response.getWriter();
 		out.print(jsonObject);
 		out.flush();
-	}
-
-	public static void recursiveDelete(File file) {
-		if (!file.exists())
-			return;
-
-		if (file.isDirectory()) {
-			for (File f : file.listFiles()) {
-				recursiveDelete(f);
-			}
-		}
-		file.delete();
 	}
 
 }

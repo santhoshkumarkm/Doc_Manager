@@ -1,9 +1,6 @@
 package com.utilities;
 
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.TimerTask;
@@ -54,8 +51,7 @@ public class AddWordsTask extends TimerTask {
 								twoLists[0]);
 					}
 					if (twoLists[1] != null) {
-						hashMapUtil.editWords(Long.valueOf(filePath.substring(0, filePath.indexOf('+'))),
-								twoLists[1]);
+						hashMapUtil.editWords(Long.valueOf(filePath.substring(0, filePath.indexOf('+'))), twoLists[1]);
 					}
 					editList.getFileNames().remove(filePath);
 					Utilities.writeFile(editFile, editList);
@@ -64,19 +60,15 @@ public class AddWordsTask extends TimerTask {
 			}
 
 			if (fileList.getFileNames().size() != 0) {
-				try {
-					filePath = fileList.getFileNames().iterator().next();
-					fileContent = Utilities.stringBuilder(new BufferedReader(new FileReader(new File(
-							"/Users/santhosh-pt2425/Documents/Cloud_Storage_Application/Clients/" + filePath))));
-					hashMapUtil.addWords(filePath, fileContent);
-					fileList.getFileNames().remove(filePath);
-					Utilities.writeFile(file, fileList);
-				} catch (FileNotFoundException e) {
-					e.printStackTrace();
-				}
+				filePath = fileList.getFileNames().iterator().next();
+				FileOperations tempFile = new FileOperations(filePath);
+				fileContent = tempFile.read();
+				hashMapUtil.addWords(filePath, fileContent);
+				fileList.getFileNames().remove(filePath);
+				Utilities.writeFile(file, fileList);
 			}
 		} catch (Exception ee) {
-			System.out.println("Catch ------ " + ee);
+			System.out.println("Catch occurred " + ee);
 			ee.printStackTrace();
 		}
 	}

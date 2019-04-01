@@ -1,6 +1,5 @@
 package com.controller;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 
@@ -15,6 +14,7 @@ import javax.servlet.http.HttpSession;
 import org.json.simple.JSONObject;
 
 import com.dao.ClientsInfoDao;
+import com.utilities.FileOperations;
 
 @WebServlet("/NewFolderController")
 public class NewFolderController extends HttpServlet {
@@ -34,20 +34,19 @@ public class NewFolderController extends HttpServlet {
 		String location = request.getParameter("location") + "/" + folderName;
 		JSONObject jsonObject = new JSONObject();
 		String successState = "ERROR";
-		File file = new File(defaultLocation + location);
+		FileOperations file = new FileOperations(location);
 		boolean flag = false;
-		String checkLocation = location.substring(0, location.indexOf('/'));
-		if (checkLocation.equals(sessionUser)) {
+		if (location.startsWith(sessionUser)) {
 			flag = true;
 		} else {
-				long fileId = ClientsInfoDao.getFileId(request.getParameter("location"));
-				String privilegeInfo = ClientsInfoDao.checkLocation(fileId, sessionUser);
-				if (privilegeInfo.substring(0, privilegeInfo.indexOf('+')).equals("write")) {
-					flag = true;
-				}
+			long fileId = ClientsInfoDao.getFileId(request.getParameter("location"));
+			String privilegeInfo = ClientsInfoDao.checkLocation(fileId, sessionUser);
+			if (privilegeInfo.substring(0, privilegeInfo.indexOf('+')).equals("write")) {
+				flag = true;
+			}
 		}
-		if (flag && !file.exists()) {			
-			file.mkdir();
+		if (flag && !file.exists()) {
+			file.makeDirectory();
 			ClientsInfoDao.insertFile(location);
 			successState = "true";
 		}
