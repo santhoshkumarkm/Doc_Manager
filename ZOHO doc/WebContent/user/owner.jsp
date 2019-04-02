@@ -7,7 +7,7 @@
 	String user = (String) session.getAttribute("user");
 %>
 <meta charset="UTF-8">
-<title>Owner</title>
+<title>Home</title>
 <script type="text/javascript" src="../script.js"></script>
 <link href="../style.css" rel="stylesheet" type="text/css">
 </head>
@@ -48,7 +48,7 @@
 			</h4>
 		</div>
 		<div style="float: right; margin: 10px; cursor: pointer;"
-			onclick="logout()">
+			onclick="confirmLogout()">
 			<h4
 				style="display: inline; color: white; background-color: black; padding: 5px 10px 5px 10px; font-family: sans-serif;">
 				Logout</h4>

@@ -4,8 +4,23 @@ var currentPrivilege = null;
 var selectedButton = null;
 var allUserList = [];
 
-var commonWords = ["the", "and", "that", "have", "for", "not", "with", "you", "this", "but", "his", "from", "they", "her", "she", "will", "would", "there", "their", "your", "could", "also"];
-
+function request(method, URL, body, callback){
+	var xmlhttp = new XMLHttpRequest();
+	xmlhttp.onreadystatechange = function() {
+		if (this.readyState == 4 && this.status == 200) {
+			var responseObj = JSON.parse(this.responseText);
+			if(responseObj != null){
+				 callback(responseObj);
+			}
+		}
+	};
+	xmlhttp.open(method, URL, true);
+	if(body == null){		
+		xmlhttp.send();
+	} else {
+		xmlhttp.send(body);
+	}
+}
 
 function checkUser(){
 	var userName = document.getElementById("userName").value;
@@ -13,19 +28,13 @@ function checkUser(){
 		document.getElementById("successCheck").innerHTML = " '/' cannot be used in user name"
 		return;
 	}
-	var xmlhttp = new XMLHttpRequest();
-	xmlhttp.onreadystatechange = function() {
-		if (this.readyState == 4 && this.status == 200) {
-			var responseObj = JSON.parse(this.responseText);
-			if(responseObj.success == "true"){
-				document.getElementById("successCheck").innerHTML = " (Available)";
-			} else {
-				document.getElementById("successCheck").innerHTML = " (User Name not available)";
-			}
+	request("GET", "../DuplicateUserController?username="+userName, null, function(responseObj){		
+		if(responseObj.success == "true"){
+			document.getElementById("successCheck").innerHTML = " (Available)";
+		} else {
+			document.getElementById("successCheck").innerHTML = " (User Name not available)";
 		}
-	};
-	xmlhttp.open("GET", "../DuplicateUserController?username="+userName, true);
-	xmlhttp.send();
+	});
 }
 
 function submitSignUpForm(){
@@ -49,17 +58,11 @@ function submitLoginForm(){
 }
 
 function getSharedUsers(rootUser) {
-	var xmlhttp = new XMLHttpRequest();
-	xmlhttp.onreadystatechange = function() {
-		if (this.readyState == 4 && this.status == 200) {
-			var userListObj = JSON.parse(this.responseText);
-			var userList = userListObj.userList;
+	request("GET", "../SharedUserListController", null, function(responseObj){
+			var userList = responseObj.userList;
 			allUserList.push(rootUser);
 			userList.forEach(userListTraverse);
-		}
-	};
-	xmlhttp.open("GET", "../SharedUserListController", true);
-	xmlhttp.send();
+		});
 }
 
 function userListTraverse(value) {
@@ -95,7 +98,6 @@ function viewFiles(user, privilege="default") {
 	if(flag){
 		onHashChange();
 	}
-	
 }
 
 function setOwner(user){
@@ -104,25 +106,26 @@ function setOwner(user){
 	}
 	owner = user;
 	var currentLocation = decodeURI(location.hash).substring(1);
-	var xmlhttp = new XMLHttpRequest();
-	xmlhttp.onreadystatechange = function() {
-		if (this.readyState == 4 && this.status == 200) {
-			var successCheck = JSON.parse(this.responseText);
-			if(successCheck.success == "true"){
-				if(decodeURI(location.hash) != ""){
-					onHashChange();
-						viewFiles(currentLocation, successCheck.privilege);
-				}
-			} else {
-				logout();
+	request("GET", "../ValidateController?location=" + currentLocation, null, function(responseObj){
+		if(responseObj.success == "true"){
+			if(decodeURI(location.hash) != ""){				
+				onHashChange();
+				viewFiles(currentLocation, responseObj.privilege);
 			}
+		} else {
+			logout();
 		}
-	};
-	xmlhttp.open("GET", "../ValidateController?location=" + currentLocation, true);
-	xmlhttp.send();
+	});
 }
 
 function openFolder(file, privilege) {
+	var shared = false; 
+	if(privilege.startsWith("owner")){
+		if(privilege.endsWith("(s)")){
+			shared = true;
+		}
+		privilege = privilege.substring(0,"owner".length);
+	}
 	if(file=="success" && privilege=="logout"){
 		logout();
 	}
@@ -163,6 +166,12 @@ function openFolder(file, privilege) {
 	if (privilege != "owner") {
 		button.appendChild(document.createTextNode(" " + btnText + " ("
 				+ privilege + ")"));
+	} else if (shared){
+		var span = document.createElement('span');
+		span.style.color = 'black';
+		span.innerHTML = "&#8599;";
+		button.appendChild(document.createTextNode(" " + btnText + "  "));
+		button.appendChild(span);
 	} else {
 		button.appendChild(document.createTextNode(" " + btnText));
 	}
@@ -173,19 +182,12 @@ function openFolder(file, privilege) {
 function goBack() {
 	closeBoxForm();
 	closeButtonForm();
-	var xmlhttp = new XMLHttpRequest();
-	xmlhttp.onreadystatechange = function() {
-		if (this.readyState == 4 && this.status == 200) {
-			var accessCheck = JSON.parse(this.responseText);
-			if (accessCheck.access != "denied") {
-// alert(accessCheck.prevLocation+"@"+ accessCheck.access)
-				currentPrivilege = accessCheck.access;
-				viewFiles(accessCheck.prevLocation, accessCheck.access);
+	request("GET", "../GoBackController?location=" + location.hash.substring(1), null, function(responseObj){
+			if (responseObj.access != "denied") {
+				currentPrivilege = responseObj.access;
+				viewFiles(responseObj.prevLocation, responseObj.access);
 			}
-		}
-	};
-	xmlhttp.open("GET", "../GoBackController?location=" + location.hash.substring(1), true);
-	xmlhttp.send();
+		});
 }
 
 function setBoxRightClick() {
@@ -264,23 +266,20 @@ function closeSearchMenu() {
 }
 
 function deleteFile() {
-	var xmlhttp = new XMLHttpRequest();
-	xmlhttp.onreadystatechange = function() {
-		if (this.readyState == 4 && this.status == 200) {
-			var successCheck = JSON.parse(this.responseText);
-			if (successCheck.success == "true") {
-				closeButtonForm();
-				onHashChange();
-			} else if (successCheck.success == "logout") {
-				window.location.replace("../index.jsp");
-			} else {
-				alert(successCheck.success);
-			}
+	var confirmLogout = confirm("Confirm delete?");
+	if(confirmLogout == false){
+		return;
+	}
+	request("POST", "../DeleteFileController?location=" + selectedButton, null, function(responseObj){
+		if (responseObj.success == "true") {
+			closeButtonForm();
+			onHashChange();
+		} else if (responseObj.success == "logout") {
+			window.location.replace("../index.jsp");
+		} else {
+			alert(responseObj.success);
 		}
-	};
-	xmlhttp.open("POST", "../DeleteFileController?location=" + selectedButton,
-			true);
-	xmlhttp.send();
+	});
 }
 
 function newFolder() {
@@ -298,23 +297,17 @@ function newFolderHandler() {
 		alert("Invalid name");
 		return;
 	}
-	var xmlhttp = new XMLHttpRequest();
-	xmlhttp.onreadystatechange = function() {
-		if (this.readyState == 4 && this.status == 200) {
-			var successCheck = JSON.parse(this.responseText);
-			if (successCheck.success == "true") {
-				closeNewFolderForm();
-				onHashChange();
-			} else if (successCheck.success == "logout") {
-				window.location.replace("../index.jsp");
-			} else {
-				alert(successCheck.success);
-			}
+	request("POST", "../NewFolderController?location=" + location.hash.substring(1)
+			+ "&foldername=" + folderName, null, function(responseObj){
+		if (responseObj.success == "true") {
+			closeNewFolderForm();
+			onHashChange();
+		} else if (responseObj.success == "logout") {
+			window.location.replace("../index.jsp");
+		} else {
+			alert(responseObj.success);
 		}
-	};
-	xmlhttp.open("POST", "../NewFolderController?location=" + location.hash.substring(1)
-			+ "&foldername=" + folderName, true);
-	xmlhttp.send();
+	});
 }
 
 function newFile() {
@@ -344,60 +337,49 @@ function newFileHandler() {
 
 function submitFile() {
 	var text = document.getElementById("textarea").value;
-	var xmlhttp = new XMLHttpRequest();
 	fileName = document.getElementById("displayfilename").innerHTML;
-// fileName = fileName.substring(fileName.lastIndexOf('/'), fileName.length);
-	xmlhttp.onreadystatechange = function() {
-		if (this.readyState == 4 && this.status == 200) {
-			var successCheck = JSON.parse(this.responseText);
-			if (successCheck.success == "true") {
-				closeEditor();
-				onHashChange();
-			} else if (successCheck.success == "logout") {
-				window.location.replace("../index.jsp");
-			} else {
-				alert(successCheck.success);
-			}
-		}
-	};
 	if (document.getElementById("editbutton").style.display == "inline-block") {
-		xmlhttp.open("POST", "../NewFileController?location=" + location.hash.substring(1)
-				+ "&filename=" + fileName + "&mode=edit", true);
+		request("POST", "../NewFileController?location=" + location.hash.substring(1)
+				+ "&filename=" + fileName + "&mode=edit", text, submitFileImpl);
 	} else {
-		xmlhttp.open("POST", "../NewFileController?location=" + location.hash.substring(1)
-				+ "&filename=" + fileName + "&mode=new", true);
+		request("POST", "../NewFileController?location=" + location.hash.substring(1)
+				+ "&filename=" + fileName + "&mode=new", text, submitFileImpl);
 	}
-	xmlhttp.send(text);
+}
+
+function submitFileImpl(responseObj){
+	if (responseObj.success == "true") {
+		closeEditor();
+		onHashChange();
+	} else if (responseObj.success == "logout") {
+		window.location.replace("../index.jsp");
+	} else {
+		alert(responseObj.success);
+	}
 }
 
 function openFile(fileName) {
-	var xmlhttp = new XMLHttpRequest();
-	xmlhttp.onreadystatechange = function() {
-		if (this.readyState == 4 && this.status == 200) {
-			var successCheck = JSON.parse(this.responseText);
-			if (successCheck.success == "true") {
-				document.getElementById("textarea").value = successCheck.content;
-				document.getElementById("textarea").disabled = true;
-				document.getElementById("savebutton").style.display = "none";
-				if (successCheck.privilege == "read") {
-					fileName = fileName + " (Read only mode)";
-					document.getElementById("editbutton").style.display = "none";
-				} else {
-					document.getElementById("editbutton").style.display = "inline-block";
-					document.getElementById("editbutton").style.opacity = "1";
-				}
-				document.getElementById("displayfilename").innerHTML = fileName;
-				document.getElementById("editor").style.display = "block";
-			} else if (successCheck.success == "logout") {
-				window.location.replace("../index.jsp");
+	request("GET", "../OpenFileController?location=" + location.hash.substring(1)
+			+ "&filename=" + fileName, null, function(responseObj){
+		if (responseObj.success == "true") {
+			document.getElementById("textarea").value = responseObj.content;
+			document.getElementById("textarea").disabled = true;
+			document.getElementById("savebutton").style.display = "none";
+			if (responseObj.privilege == "read") {
+				fileName = fileName + " (Read only mode)";
+				document.getElementById("editbutton").style.display = "none";
 			} else {
-				alert(successCheck.success);
+				document.getElementById("editbutton").style.display = "inline-block";
+				document.getElementById("editbutton").style.opacity = "1";
 			}
+			document.getElementById("displayfilename").innerHTML = fileName;
+			document.getElementById("editor").style.display = "block";
+		} else if (responseObj.success == "logout") {
+			window.location.replace("../index.jsp");
+		} else {
+			alert(responseObj.success);
 		}
-	};
-	xmlhttp.open("GET", "../OpenFileController?location=" + location.hash.substring(1)
-			+ "&filename=" + fileName, true);
-	xmlhttp.send();
+	});
 }
 
 function editFile() {
@@ -411,27 +393,20 @@ function shareFile() {
 	while (readSelect.firstChild) {
 		readSelect.removeChild(readSelect.firstChild);
 	}
-	var xmlhttp = new XMLHttpRequest();
-	xmlhttp.onreadystatechange = function() {
-		if (this.readyState == 4 && this.status == 200) {
-			var parcedJsonObject = JSON.parse(this.responseText);
-			if (parcedJsonObject.success == "true") {
-				closeButtonForm();
-				document.getElementById("selectedFile").innerHTML = selectedButton
-						.substring(selectedButton.lastIndexOf('/') + 1);
-				var option = document.createElement('option');
-				parcedJsonObject.users.forEach(addOption);
-				document.getElementById("shareFileForm").style.display = "block";
-			} else if (parcedJsonObject.success == "logout") {
+	request("GET", "../AllUserListController?location=" + selectedButton, null, function(responseObj){
+		if (responseObj.success == "true") {
+			closeButtonForm();
+			document.getElementById("selectedFile").innerHTML = selectedButton
+				.substring(selectedButton.lastIndexOf('/') + 1);
+			var option = document.createElement('option');
+			responseObj.users.forEach(addOption);
+			document.getElementById("shareFileForm").style.display = "block";
+		} else if (responseObj.success == "logout") {
 				window.location.replace("../index.jsp");
-			} else {
-				alert(successCheck.success);
-			}
+		} else {
+			alert(responseObj.success);
 		}
-	};
-	xmlhttp.open("GET", "../AllUserListController?location=" + selectedButton,
-			true);
-	xmlhttp.send();
+	});
 }
 
 function addOption(value) {
@@ -453,39 +428,31 @@ function shareFileHandler() {
 		if (readSelect.options[i].selected)
 			opt.push(readSelect.options[i].value);
 	}
-	var xmlhttp = new XMLHttpRequest();
-	xmlhttp.onreadystatechange = function() {
-		if (this.readyState == 4 && this.status == 200) {
-			var successCheck = JSON.parse(this.responseText);
-			if (successCheck.success == "true") {
+	if (opt != "") {
+		request("POST", "../ShareFileController?location="
+			+ selectedButton + "&privilege=" + getPrivilege, opt, function(responseObj){
+			if (responseObj.success == "true") {
 				closeShareFileForm();
-			} else if (successCheck.success == "logout") {
+				onHashChange();
+			} else if (responseObj.success == "logout") {
 				window.location.replace("../index.jsp");
 			} else {
-				alert(successCheck.success);
+				alert(responseObj.success);
 			}
-		}
-	};
-	if (opt != "") {
-		xmlhttp.open("POST", "../ShareFileController?location="
-				+ selectedButton + "&privilege=" + getPrivilege, true);
-		xmlhttp.send(opt);
+		});
 	} else {
 		alert("No user selected");
 	}
 }
 
 function viewShare() {
-	var xmlhttp = new XMLHttpRequest();
-	xmlhttp.onreadystatechange = function() {
-		if (this.readyState == 4 && this.status == 200) {
-			var parsedJsonObj = JSON.parse(this.responseText);
+	request("GET", "../ViewShareController?location=" + selectedButton, null, function(responseObj){
 			closeButtonForm();
-			if(parsedJsonObj.success == "ERROR"){
-				alert(parsedJsonObj.success);
+			if(responseObj.success == "ERROR"){
+				alert(responseObj.success);
 				return;
 			}
-			if (Object.keys(parsedJsonObj)[0] == "notshared") {
+			if (Object.keys(responseObj)[0] == "notshared") {
 				alert("No Shared users");
 				return;
 			}
@@ -503,128 +470,119 @@ function viewShare() {
 			trHeader.appendChild(th1);
 			trHeader.appendChild(th2);
 			table.appendChild(trHeader);
-			for (x in parsedJsonObj) {
+			for (x in responseObj) {
 				if(x == "success"){
 					continue;
 				}
-				var editOption = document.createElement('button');
-				var p = document.createElement('span');
-				p.innerHTML = "&#8644;";
-				editOption.appendChild(p);
-				editOption.setAttribute('id', x);
-				editOption.setAttribute('onclick', 'change(this.id)');
-				editOption.setAttribute('type', 'button');
-				editOption.setAttribute('class', 'editshare');
-				var removeOption = document.createElement('button');
-				var span = document.createElement('span');
-				span.innerHTML = "&#10005;";
-				removeOption.appendChild(span);
-				removeOption.setAttribute('id', x);
-				removeOption.setAttribute('onclick', 'removeShare(this.id)');
-				removeOption.setAttribute('type', 'button');
-				removeOption.setAttribute('class', 'removeshare');
-				var tr = document.createElement('tr');
-				var td1 = document.createElement('td');
-				td1.appendChild(document.createTextNode(x));
-				td1.setAttribute('align', 'center');
-				tr.appendChild(td1);
-				var td2 = document.createElement('td');
-				td2
-						.appendChild(document.createTextNode(parsedJsonObj[x]
-								+ " "));
-				td2.appendChild(editOption);
-				td2.appendChild(removeOption);
-				td2.setAttribute('align', 'right');
-				tr.appendChild(td2);
-				table.appendChild(tr);
-				document.getElementById("viewShareForm").style.display = "block";
+			var editOption = document.createElement('button');
+			var p = document.createElement('span');
+			p.innerHTML = "&#8644;";
+			editOption.appendChild(p);
+			editOption.setAttribute('id', x);
+			editOption.setAttribute('onclick', 'change(this.id)');
+			editOption.setAttribute('type', 'button');
+			editOption.setAttribute('class', 'editshare');
+			var removeOption = document.createElement('button');
+			var span = document.createElement('span');
+			span.innerHTML = "&#10005;";
+			removeOption.appendChild(span);
+			removeOption.setAttribute('id', x);
+			removeOption.setAttribute('onclick', 'removeShare(this.id)');
+			removeOption.setAttribute('type', 'button');
+			removeOption.setAttribute('class', 'removeshare');
+			var tr = document.createElement('tr');
+			var td1 = document.createElement('td');
+			td1.appendChild(document.createTextNode(x));
+			td1.setAttribute('align', 'center');
+			tr.appendChild(td1);
+			var td2 = document.createElement('td');
+			td2.appendChild(document.createTextNode(responseObj[x]+ " "));
+			td2.appendChild(editOption);
+			td2.appendChild(removeOption);
+			td2.setAttribute('align', 'right');
+			tr.appendChild(td2);
+			table.appendChild(tr);
+			document.getElementById("viewShareForm").style.display = "block";
 			}
-		}
-	};
-	xmlhttp.open("GET", "../ViewShareController?location=" + selectedButton,
-			true);
-	xmlhttp.send();
+		});
 }
 
 function removeShare(sharedUser) {
-	var xmlhttp = new XMLHttpRequest();
-	xmlhttp.onreadystatechange = function() {
-		if (this.readyState == 4 && this.status == 200) {
-			var successCheck = JSON.parse(this.responseText);
-			if (successCheck.success == "true") {
+	request("POST", "../RemoveShareController?user=" + sharedUser
+			+ "&location=" + selectedButton, null, function(responseObj){
+			if (responseObj.success == "true") {
 				closeViewShareForm();
 				viewShare();
-			} else if (successCheck.success == "logout") {
+				onHashChange();
+			} else if (responseObj.success == "logout") {
 				window.location.replace("../index.jsp");
 			} else {
-				alert(successCheck.success);
+				alert(responseObj.success);
 			}
-		}
-	};
-	xmlhttp.open("POST", "../RemoveShareController?user=" + sharedUser
-			+ "&location=" + selectedButton, true);
-	xmlhttp.send();
+		});
 }
 
 function change(sharedUser) {
-	var xmlhttp = new XMLHttpRequest();
-	xmlhttp.onreadystatechange = function() {
-		if (this.readyState == 4 && this.status == 200) {
-			var successCheck = JSON.parse(this.responseText);
-			if (successCheck.success == "true") {
+	request("POST", "../ChangePrivilegeController?user=" + sharedUser
+			+ "&location=" + selectedButton, null, function(responseObj){
+			if (responseObj.success == "true") {
 				closeViewShareForm();
 				viewShare();
-			} else if (successCheck.success == "logout") {
+			} else if (responseObj.success == "logout") {
 				window.location.replace("../index.jsp");
 			} else {
-				alert(successCheck.success);
+				alert(responseObj.success);
 			}
-		}
-	};
-	xmlhttp.open("POST", "../ChangePrivilegeController?user=" + sharedUser
-			+ "&location=" + selectedButton, true);
-	xmlhttp.send();
+		});
+}
+
+function containsAplhaNumeric(str) {
+	  var code, i, len;
+	  for (i = 0, len = str.length; i < len; i++) {
+	    code = str.charCodeAt(i);
+	    if ((code > 47 && code < 58) || //(0-9)
+	        (code > 64 && code < 91) || //(A-Z)
+	        (code > 96 && code < 123)) { //(a-z)
+	      return true;
+	    }
+	  }
+	  return false;
 }
 
 function onKeyPress() {
-	var text = document.getElementById("searchText");
-	if (text.value.length >= 3) {
-		for (var i = 0; i < commonWords.length; i++) {
-			if(commonWords[i] == text.value){
-				return;
-			}
-		}
-		var xmlhttp = new XMLHttpRequest();
-		xmlhttp.onreadystatechange = function() {
-			if (this.readyState == 4 && this.status == 200) {
-				var successCheck = JSON.parse(this.responseText);
+	var text = document.getElementById("searchText").value;
+	if (text.length >= 3 && containsAplhaNumeric(text)) {
+		request("POST", "../SearchController?", text, function(responseObj){
+				var searchResult = document.getElementById("searchresult");
 				var searchMenu = document.getElementById("searchmenu");
 				searchMenu.style.display = "block";
-				var searchResult = document.getElementById("searchresult");
 				while (searchResult.firstChild) {
 					searchResult.removeChild(searchResult.firstChild);
 				}
-				if(successCheck.length == 0){
+				if(responseObj.common != null){
+					var br = document.createElement('br');
+					document.getElementById("searchresult").appendChild(br);
+					searchResult.appendChild(document.createTextNode(" Word is very common ! "));
+					return;					
+				}
+				if(responseObj.length == 0){
 					var br = document.createElement('br');
 					document.getElementById("searchresult").appendChild(br);
 					searchResult.appendChild(document.createTextNode(" No matches found ! "));
 					return;
 				}
-					for(var i=0; i<successCheck.length; i++){						
-						showFoundFiles(successCheck[i], successCheck.length);
+					for(var i=0; i<responseObj.length; i++){						
+						showFoundFiles(responseObj[i], responseObj.length);
 					}
-			}
-		};
-		xmlhttp.open("POST", "../SearchController?", true);
-		xmlhttp.send(text.value);
+			});
 	} else {
 		closeSearchMenu();
 	}
 }
 
-function showFoundFiles(successCheck, length) {
+function showFoundFiles(responseObj, length) {
 	var searchResult = document.getElementById("searchresult");
-	for (x in successCheck) {
+	for (x in responseObj) {
 		if(x=="editDistance"){
 			var br = document.createElement('br');
 			searchResult.appendChild(br);
@@ -636,26 +594,28 @@ function showFoundFiles(successCheck, length) {
 			}
 			continue;
 		}
-		wordsList(x, successCheck[x]);
+		wordsList(x, responseObj[x]);
 	}
 	var br = document.createElement('br');
 	document.getElementById("searchresult").appendChild(br);
 }
+
 function wordsList(word, files) {
 	var searchResult = document.getElementById("searchresult");
 	for(var i=0; i<files.length; i++)
 	{
 		var fileDetail = files[i];
-			var br = document.createElement('br');
-			searchResult.appendChild(br);
-			searchResult.appendChild(document
+		var br = document.createElement('br');
+		searchResult.appendChild(br);
+		searchResult.appendChild(document
 					.createTextNode("Found: " + word + " "));
-			fileList(word, Object.keys(fileDetail)[0], Object.values(fileDetail)[0]);
-			var hr = document.createElement('hr');
-			searchResult.appendChild(hr);
+		fileList(word, Object.keys(fileDetail)[0], Object.values(fileDetail)[0]);
+		var hr = document.createElement('hr');
+		searchResult.appendChild(hr);
 	}
 	
 }
+
 function fileList(word, filePath, count) {
 	var item = document.createElement('li');
 	var button = document.createElement('div');
@@ -699,59 +659,56 @@ function openSourceLocation(directory) {
 	location.hash = directory.substring(0, directory.lastIndexOf('/'));
 }
 
+function confirmLogout(){
+	var confirmOut = confirm("Are your sure to logout?");
+	if(confirmOut == true){
+		logout();
+	}
+	
+}
+
 function logout() {
-	var xmlhttp = new XMLHttpRequest();
-	xmlhttp.onreadystatechange = function() {
-		if (this.readyState == 4 && this.status == 200) {
-			var successCheck = JSON.parse(this.responseText);
+	request("GET", "../LogoutController", null, function(responseObj){
 			window.location.replace("../index.jsp");
-		}
-	};
-	xmlhttp.open("GET", "../LogoutController", true);
-	xmlhttp.send();
+	});
 }
 
 function onHashChange() {
 	window.scrollTo(0, 0);
-	var xmlhttp = new XMLHttpRequest();
 	var hashValue = decodeURI(location.hash).substring(1);
-	xmlhttp.onreadystatechange = function() {
-		if (this.readyState == 4 && this.status == 200) {
-			var parsedJsonObj = JSON.parse(this.responseText);
-			if (parsedJsonObj.success == "ERROR") {
-				alert("Folder not available");
-				var temp = hashValue.substring(0,hashValue.lastIndexOf('/'));
-				location.hash = temp.substring(0,temp.lastIndexOf('/'));
-				goBack();
-			} else if (parsedJsonObj.success == "DENIED") {
-				alert("Folder not accessible");
-				window.history.back();
-			} else {
-				document.getElementById("dispdir").innerHTML = hashValue;
-				for (var i = 0; i < allUserList.length; i++) {
-					document.getElementById(allUserList[i]).style.opacity = "0.5";
-				}
-				if(hashValue.indexOf('/')!=-1){
-					document.getElementById(hashValue.substring(0,hashValue.indexOf('/'))).style.opacity = "1";
-				} else {
-					document.getElementById(hashValue).style.opacity = "1";
-				}
-				var myfolderlist = document.getElementById("myfolderlist");
-				while (myfolderlist.firstChild) {
-					myfolderlist.removeChild(myfolderlist.firstChild);
-				}
-				for (x in parsedJsonObj) {
-					openFolder(x, parsedJsonObj[x]);
-				}
-			}
-		}
-	};
 	if (hashValue.indexOf('/') == -1) {
-		xmlhttp.open("GET", "../ViewFolderController?shareduser=" + hashValue,
-				true);
+		request("GET", "../ViewFolderController?shareduser=" + hashValue, null, hashChangeImpl);
 	} else {
-		xmlhttp.open("GET", "../ViewFolderForLocationController?location="
-				+ hashValue, true);
+		request("GET","../ViewFolderForLocationController?location=" + hashValue, null, hashChangeImpl);
 	}
-	xmlhttp.send();
+}
+
+function hashChangeImpl(responseObj){
+	var hashValue = decodeURI(location.hash).substring(1);
+	if (responseObj.success == "ERROR") {
+		alert("Folder not available");
+		var temp = hashValue.substring(0,hashValue.lastIndexOf('/'));
+		location.hash = temp.substring(0,temp.lastIndexOf('/'));
+		goBack();
+	} else if (responseObj.success == "DENIED") {
+		alert("Folder not accessible");
+		window.history.back();
+	} else {
+		document.getElementById("dispdir").innerHTML = hashValue;
+		for (var i = 0; i < allUserList.length; i++) {
+			document.getElementById(allUserList[i]).style.opacity = "0.5";
+		}
+		if(hashValue.indexOf('/')!=-1){
+			document.getElementById(hashValue.substring(0,hashValue.indexOf('/'))).style.opacity = "1";
+		} else {
+			document.getElementById(hashValue).style.opacity = "1";
+		}
+		var myfolderlist = document.getElementById("myfolderlist");
+		while (myfolderlist.firstChild) {
+			myfolderlist.removeChild(myfolderlist.firstChild);
+		}
+		for (x in responseObj) {
+			openFolder(x, responseObj[x]);
+		}
+	}
 }

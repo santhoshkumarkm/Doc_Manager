@@ -206,7 +206,7 @@ public class ClientsInfoDao {
 
 	public static Map<String, String> getSharedFilesForALocation(String location, String user) {
 		int firstIndex = location.indexOf('/');
-		int lastIndex = location.lastIndexOf('/');
+//		int lastIndex = location.lastIndexOf('/');
 		String ownerName = location.substring(0, firstIndex);
 		String fileLocation = location.substring(firstIndex + 1);
 		Statement stmt = null, stmt2 = null;
@@ -255,19 +255,19 @@ public class ClientsInfoDao {
 	}
 
 	public static Map<String, String> getRootUserFiles(String user) {
-		Statement stmt = null;
-		ResultSet rs = null;
+		Statement stmt = null, stmt2 = null;
+		ResultSet rs = null, rs2 = null;
 		HashMap<String, String> map = new HashMap<String, String>();
 		try {
 			stmt = con.createStatement();
 			if (user.indexOf('/') == -1) {
-				rs = stmt.executeQuery("select ownername, filelocation, filename from files_info where ownerName = '"
+				rs = stmt.executeQuery("select ownername, filelocation, filename, id from files_info where ownerName = '"
 						+ user + "' and filelocation = ''");
 			} else {
 				int firstIndex = user.indexOf('/');
 				String ownerName = user.substring(0, firstIndex);
 				String fileLocation = user.substring(firstIndex + 1);
-				rs = stmt.executeQuery("select ownername, filelocation, filename from files_info where ownerName = '"
+				rs = stmt.executeQuery("select ownername, filelocation, filename, id from files_info where ownerName = '"
 						+ ownerName + "' and fileLocation = '" + fileLocation + "'");
 			}
 			while (rs.next()) {
@@ -277,7 +277,15 @@ public class ClientsInfoDao {
 				} else {
 					result = rs.getString(1) + "/" + rs.getString(2) + "/" + rs.getString(3);
 				}
-				map.put(result, "owner");
+				stmt2 = con.createStatement();
+				rs2 = stmt2.executeQuery("select exists( select user_id from shared_users_info where file_id = '"+rs.getLong(4)+"')");
+				if(rs2.next()) {
+					if(rs2.getInt(1)==1) {
+						map.put(result, "owner(s)");
+					} else {
+						map.put(result, "owner(n)");
+					}
+				}
 			}
 		} catch (SQLException e) {
 			e.printStackTrace();
@@ -489,8 +497,10 @@ public class ClientsInfoDao {
 	public static JSONArray search(LinkedHashMap<Integer, ArrayList<Integer>> wordDetailMap, String user) {
 		JSONObject jsonObject = new JSONObject();
 		JSONArray jsonArray = new JSONArray();
+//		System.out.println("user: " + user);
 		for (Map.Entry<Integer, ArrayList<Integer>> entry : wordDetailMap.entrySet()) {
 			String fileLocation = checkLocation(entry.getKey(), user);
+//			System.out.println("fileLocation: " + fileLocation);
 			if (fileLocation != null) {
 				jsonObject.put(fileLocation.substring(fileLocation.indexOf('+') + 1), entry.getValue().size());
 			}
@@ -538,6 +548,7 @@ public class ClientsInfoDao {
 				fileLocation = rs1.getString(2);
 				fileName = rs1.getString(3);
 			}
+//			System.out.println("fileId: " + getUserId(user));
 			stmt2 = con.createStatement();
 			rs2 = stmt2.executeQuery(
 					"select privilege from shared_users_info s inner join files_info f on f.id = s.file_id where s.user_id = '"
@@ -547,7 +558,9 @@ public class ClientsInfoDao {
 							+ "',1,char_length(concat(f.ownername ,'/', f.filelocation,'/', filename,'/')))"
 							+ " or (f.filelocation = '' " + "and "
 							+ "concat(f.ownername ,'/',f.filename,'/') = substring('" + ownerName + "/" + fileLocation
-							+ "/" + fileName + "/" + "',1,char_length(concat(f.ownername ,'/',f.filename,'/'))))"
+							+ "/" + fileName + "/"
+							+ "',1,char_length(concat(f.ownername ,'/',f.filename,'/'))) and s.user_id = '"
+							+ getUserId(user) + "')"
 							+ " order by char_length(concat(f.ownername ,'/', f.filelocation ,'/', f.filename ,'/')) desc limit 1");
 			if (rs2.next()) {
 				if (rs2.getString(1) != null) {
