@@ -71,9 +71,9 @@ public class Trie implements Serializable {
 		if (!contains)
 			return null;
 		LinkedList<String> pairs = new LinkedList<String>();
-		if (trieNode.wordDetail != null) {
-			pairs.add(key);
-		}
+//		if (trieNode.wordDetail != null) {
+//			pairs.add(key);
+//		}
 //		for (int i = 0; i < trieNode.nodeArray.size(); i++) {
 
 //			System.out.println(
@@ -109,9 +109,9 @@ public class Trie implements Serializable {
 				return null;
 		}
 		LinkedList<String> pairs = new LinkedList<String>();
-		if (trieNode.wordDetail != null) {
-			pairs.add(key);
-		}
+//		if (trieNode.wordDetail != null) {
+//			pairs.add(key);
+//		}
 //		for (int i = 0; i < trieNode.nodeArray.size(); i++) {
 		pairs.addAll(getSuggestions(new LinkedList<String>(), key, trieNode));
 //		}

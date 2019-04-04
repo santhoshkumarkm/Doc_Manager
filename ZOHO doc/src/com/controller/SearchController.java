@@ -5,7 +5,6 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
@@ -41,13 +40,14 @@ public class SearchController extends HttpServlet {
 		defaultLocation = getServletContext().getInitParameter("defaultLocation");
 	}
 
+	@SuppressWarnings("unchecked")
 	protected void doPost(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
 		HttpSession session = request.getSession();
 		String user = (String) session.getAttribute("user");
 		BufferedReader reader = new BufferedReader(new InputStreamReader(request.getInputStream()));
 		JSONObject jsonObject = new JSONObject();
-		String words = Utilities.stringBuilder(reader);
+		String words = Utilities.stringBuilder(reader).trim();
 //		System.out.println("words: " + words);
 		JSONArray jsonFinalArray = new JSONArray();
 		PrintWriter out = null;
@@ -65,8 +65,7 @@ public class SearchController extends HttpServlet {
 			out = response.getWriter();
 			out.print(jsonObject);
 //			System.out.println("json: " + jsonObject);
-		}
-		if (!common) {
+		} else {
 			LinkedHashMap<String, LinkedHashMap<Integer, ArrayList<Integer>>> wordsDetailMap = AddWordsTask
 					.getHashMapUtil().findWord(words.split("\\W+"));
 //		System.out.println("before word detail: " + wordsDetailMap);

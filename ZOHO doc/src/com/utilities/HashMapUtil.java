@@ -160,10 +160,8 @@ public class HashMapUtil {
 			}
 		}
 		if (fileAndPositionCopy.size() > 0 && index + 1 != words.length) {
-			if (index != 0) {
 				fileAndPosition.clear();
 				fileAndPosition = fileAndPositionCopy;
-			}
 			flag = findMultiWordsImpl(flag, words, index + 1, tempPositions, tempFiles);
 		} else if (fileAndPositionCopy.size() > 0 && index + 1 == words.length) {
 			fileAndPosition.clear();

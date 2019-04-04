@@ -170,6 +170,7 @@ public class ClientsInfoDao {
 		return filePrivilege;
 	}
 
+	@SuppressWarnings("unchecked")
 	public static JSONArray allUserList(String rootUser, String location) {
 		Statement stmt = null;
 		ResultSet rs = null;
@@ -494,6 +495,7 @@ public class ClientsInfoDao {
 		}
 	}
 
+	@SuppressWarnings("unchecked")
 	public static JSONArray search(LinkedHashMap<Integer, ArrayList<Integer>> wordDetailMap, String user) {
 		JSONObject jsonObject = new JSONObject();
 		JSONArray jsonArray = new JSONArray();
